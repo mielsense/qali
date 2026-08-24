@@ -617,6 +617,57 @@ describe("desktop multi-Google identity", () => {
     expect(violations).toBe(0);
   });
 
+  test("legacy account labels are quarantined before account-scoped audit", async () => {
+    const t = convexTest(schema, modules);
+    const legacyEventId = await t.run((ctx) =>
+      ctx.db.insert("events", {
+        userId: USER,
+        localEventId: "legacy_labeled_event_001",
+        accountId: "legacy-account@example.invalid",
+        calendarId: "primary",
+        googleEventId: "legacy-labeled-event",
+        providerEventId: "legacy-labeled-event",
+        startMs: 1_000,
+        endMs: 2_000,
+        allDay: false,
+        status: "confirmed",
+        googleUpdatedMs: 1,
+        syncState: "synced",
+      }),
+    );
+    const broker = t.withIdentity(brokerIdentity());
+
+    let cursor: string | undefined;
+    for (let page = 0; page < 10; page += 1) {
+      const result = await broker.mutation(
+        desktopMutation("migrateLegacyGoogleData"),
+        { cursor },
+      );
+      cursor = result.cursor;
+      if (result.done) break;
+    }
+
+    await t.run(async (ctx) => {
+      const detachedConnection = (
+        await ctx.db
+          .query("calendarConnections")
+          .withIndex("by_user_and_provider", (query) =>
+            query.eq("userId", USER).eq("provider", "google"),
+          )
+          .collect()
+      ).find((row) => row.legacyMigrationState === "detached");
+
+      expect(detachedConnection).toMatchObject({
+        status: "paused",
+        lastError: "legacy_identity_required",
+      });
+      expect(await ctx.db.get(legacyEventId)).toMatchObject({
+        connectionId: detachedConnection?._id,
+        accountId: "legacy-account@example.invalid",
+      });
+    });
+  });
+
   test("scoped migration repairs bound operation snapshots from the single-account format", async () => {
     const t = convexTest(schema, modules);
     const operationId = await t.run(async (ctx) => {
@@ -700,7 +751,8 @@ describe("desktop multi-Google identity", () => {
 
   test("scoped migration recovers a hashed event calendar from its bound membership", async () => {
     const t = convexTest(schema, modules);
-    const { eventId, offlineEventId, seriesId } = await t.run(async (ctx) => {
+    const { connectionId, eventId, offlineCreateId, offlineEventId, seriesId } =
+      await t.run(async (ctx) => {
       const connectionId = await ctx.db.insert("calendarConnections", {
         userId: USER,
         provider: "google",
@@ -760,6 +812,20 @@ describe("desktop multi-Google identity", () => {
         providerUpdatedMs: 0,
         syncState: "pending",
       });
+      const offlineCreateId = await ctx.db.insert("events", {
+        userId: USER,
+        connectionId,
+        localEventId: "legacy_local_pending_create_001",
+        accountId: ACCOUNT_A,
+        calendarId: CALENDAR_A,
+        googleEventId: "local-pending-create-1",
+        googleUpdatedMs: 0,
+        startMs: 5_000,
+        endMs: 6_000,
+        allDay: false,
+        status: "confirmed",
+        syncState: "pending",
+      });
       const seriesId = await ctx.db.insert("recurringSeries", {
         userId: USER,
         connectionId,
@@ -768,7 +834,13 @@ describe("desktop multi-Google identity", () => {
         recurrence: ["RRULE:FREQ=WEEKLY"],
         sourceUpdatedMs: 1,
       });
-      return { eventId, offlineEventId, seriesId };
+      return {
+        connectionId,
+        eventId,
+        offlineCreateId,
+        offlineEventId,
+        seriesId,
+      };
     });
     const broker = t.withIdentity(brokerIdentity());
     let cursor: string | undefined;
@@ -805,6 +877,12 @@ describe("desktop multi-Google identity", () => {
         calendarId: CALENDAR_A,
         providerEventId: "deterministic-provider-event-1",
         providerUpdatedMs: 0,
+        syncState: "pending",
+      });
+      expect(await ctx.db.get(offlineCreateId)).toMatchObject({
+        accountId: ACCOUNT_A,
+        calendarId: CALENDAR_A,
+        connectionId,
         syncState: "pending",
       });
     });

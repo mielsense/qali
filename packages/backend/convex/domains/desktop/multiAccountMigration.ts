@@ -11,6 +11,10 @@ import {
 import { requireDesktopBroker } from "./identity";
 
 const PAGE_SIZE = 25;
+const STABLE_GOOGLE_ACCOUNT_PREFIX = "gacc_";
+// Convex filters do not expose startsWith. In UTF-8 lexical order, every
+// stable account id is in ["gacc_", "gacc`").
+const STABLE_GOOGLE_ACCOUNT_PREFIX_END = "gacc`";
 const STAGES = [
   "calendars",
   "events",
@@ -86,7 +90,8 @@ function belongsToClaimedLegacy(
   if (connection.legacyMigrationState !== "claimed") return false;
   return (
     row.connectionId === undefined &&
-    (row.accountId === undefined || !row.accountId.startsWith("gacc_"))
+    (row.accountId === undefined ||
+      !row.accountId.startsWith(STABLE_GOOGLE_ACCOUNT_PREFIX))
   );
 }
 
@@ -104,7 +109,8 @@ function belongsToPosition(
   return (
     row.connectionId === position.connectionId ||
     (row.connectionId === undefined &&
-      (row.accountId === undefined || !row.accountId.startsWith("gacc_")))
+      (row.accountId === undefined ||
+        !row.accountId.startsWith(STABLE_GOOGLE_ACCOUNT_PREFIX)))
   );
 }
 
@@ -116,7 +122,8 @@ function isUnscopedLegacyRow(
 ): boolean {
   return (
     row.connectionId === undefined &&
-    (row.accountId === undefined || !row.accountId.startsWith("gacc_"))
+    (row.accountId === undefined ||
+      !row.accountId.startsWith(STABLE_GOOGLE_ACCOUNT_PREFIX))
   );
 }
 
@@ -153,9 +160,17 @@ async function hasUnscopedLegacyData(
       .filter((query) =>
         query.and(
           query.eq(query.field("connectionId"), undefined),
-          query.or(
-            query.eq(query.field("accountId"), undefined),
-            query.eq(query.field("accountId"), "google-local-account"),
+          query.not(
+            query.and(
+              query.gte(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX,
+              ),
+              query.lt(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX_END,
+              ),
+            ),
           ),
         ),
       )
@@ -166,9 +181,17 @@ async function hasUnscopedLegacyData(
       .filter((query) =>
         query.and(
           query.eq(query.field("connectionId"), undefined),
-          query.or(
-            query.eq(query.field("accountId"), undefined),
-            query.eq(query.field("accountId"), "google-local-account"),
+          query.not(
+            query.and(
+              query.gte(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX,
+              ),
+              query.lt(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX_END,
+              ),
+            ),
           ),
         ),
       )
@@ -186,9 +209,17 @@ async function hasUnscopedLegacyData(
       .filter((query) =>
         query.and(
           query.eq(query.field("connectionId"), undefined),
-          query.or(
-            query.eq(query.field("accountId"), undefined),
-            query.eq(query.field("accountId"), "google-local-account"),
+          query.not(
+            query.and(
+              query.gte(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX,
+              ),
+              query.lt(
+                query.field("accountId"),
+                STABLE_GOOGLE_ACCOUNT_PREFIX_END,
+              ),
+            ),
           ),
         ),
       )
