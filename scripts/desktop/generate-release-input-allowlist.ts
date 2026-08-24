@@ -8,6 +8,7 @@ import {
   collectReleaseSourceState,
   collectReleaseInputEntries,
   isDeclaredTrackedReleasePath,
+  resolveGitExecutable,
   type ReleaseInputAllowlist,
 } from "./lib/release-input-allowlist";
 
@@ -49,12 +50,13 @@ try {
         `RELEASE_INPUT_PATH_SET_CHANGED:${missing[0] ?? "unknown"}`,
       );
     }
+    const gitExecutable = await resolveGitExecutable(repositoryRoot);
     for (const path of added) {
       if (!isDeclaredTrackedReleasePath(path)) {
         throw new Error(`RELEASE_INPUT_PATH_SET_CHANGED:${path}`);
       }
       await execFileAsync(
-        "/usr/bin/git",
+        gitExecutable,
         ["ls-files", "--error-unmatch", "--", path],
         {
           cwd: repositoryRoot,

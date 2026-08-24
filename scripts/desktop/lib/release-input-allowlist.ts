@@ -149,7 +149,9 @@ async function collectReleaseSourceMaterial(repositoryRoot: string): Promise<{
   return { patch, revision, status };
 }
 
-async function resolveGitExecutable(repositoryRoot: string): Promise<string> {
+export async function resolveGitExecutable(
+  repositoryRoot: string,
+): Promise<string> {
   const candidates = ["/usr/bin/git", "/opt/homebrew/bin/git"] as const;
   let lastError: unknown;
 

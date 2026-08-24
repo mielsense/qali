@@ -182,6 +182,16 @@ describe("personal macOS release wiring", () => {
     );
   });
 
+  test("resolves the reviewed Git executable for every release-input check", async () => {
+    const generator = await readFile(
+      resolve(repositoryRoot, "scripts/desktop/generate-release-input-allowlist.ts"),
+      "utf8",
+    );
+
+    expect(generator).toContain("resolveGitExecutable(repositoryRoot)");
+    expect(generator).not.toContain('execFileAsync(\n        "/usr/bin/git"');
+  });
+
   test("keeps dirty packaging explicit, local-only, and bound to the installed OAuth client", () => {
     expect(parseBuildAppMode([], false)).toEqual({ localDevelopment: false });
     expect(parseBuildAppMode(["--local-development"], false)).toEqual({
