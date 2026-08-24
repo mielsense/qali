@@ -9529,10 +9529,10 @@
       "sha256": "533b89a64b6f86aa4b96b4320615d82cfc5e8778251ebd6aa8cfd7f24c125c93"
     },
     {
-      "bytes": 24324,
+      "bytes": 25137,
       "mode": 420,
       "path": "packages/backend/convex/domains/desktop/multiAccountMigration.ts",
-      "sha256": "55eef20da86f442f87a1fbb4024142a7528df94cee2b2b40b5eb7e8f334f1690"
+      "sha256": "50a7b619e621640c4136854d90a37133ad71bcf4afa3f55036d96f387cebd43f"
     },
     {
       "bytes": 2430,
