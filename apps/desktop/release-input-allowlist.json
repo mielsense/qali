@@ -1,10 +1,10 @@
 {
   "entries": [
     {
-      "bytes": 2704,
+      "bytes": 2699,
       "mode": 420,
       "path": "apps/desktop/electron-builder.yml",
-      "sha256": "e1eddcfc82f8f29284f51e56f24af9a2bc78f1f16955dc6c21e0f25ea70f50f9"
+      "sha256": "3fcfedd2f0b3d66937bcfd93a1ec11c0c15fe3444b4411c408027fa991c6c4f2"
     },
     {
       "bytes": 1212,
@@ -7519,10 +7519,10 @@
       "sha256": "e51f9e1dfb4d95a5ff56933666b1231939c4c044c87f76fb0c63305b05cddddf"
     },
     {
-      "bytes": 107,
+      "bytes": 102,
       "mode": 420,
       "path": "apps/desktop/resources/update-policy.json",
-      "sha256": "bba06083f133b6e039b5dc131492cd23b920a26b898c950ba97f96ee75ffc050"
+      "sha256": "fdaeb94de38e0302b293ef2b5b1372d257d56c1c3e7147edb8a22359d35a3e03"
     },
     {
       "bytes": 222,
@@ -7933,10 +7933,10 @@
       "sha256": "8bb30cf379d535c54b7f4d5ed8d1d867ff4778ed34de730326b1833bed122df8"
     },
     {
-      "bytes": 958,
+      "bytes": 953,
       "mode": 420,
       "path": "apps/desktop/src/main/updates/policy.ts",
-      "sha256": "b79633a755937968660e82ba2e5b34ec810ac08e0c0f7f5f9df484db658618bb"
+      "sha256": "55bf50062949e7a5b50ea0df68e486b0a69c6762e3979a09e4da0ae3e51030ee"
     },
     {
       "bytes": 855,
@@ -8449,22 +8449,22 @@
       "sha256": "dddc8dbde7e4cc1588048fec5f826d944a159f1984b7716548857d7aefc6237c"
     },
     {
-      "bytes": 1499,
+      "bytes": 1793,
       "mode": 420,
       "path": "apps/web/src/components/insights/calendar-insights.test.ts",
-      "sha256": "a696deec00cce1a6e9835a05f18739cf741602a6693b102e874c3b6f05b72159"
+      "sha256": "c7e7241afb9008793425f1d0d3605a06ae6324e349cfa115465b244f23eb8701"
     },
     {
-      "bytes": 3731,
+      "bytes": 5170,
       "mode": 420,
       "path": "apps/web/src/components/insights/calendar-insights.ts",
-      "sha256": "df55b35f5fedbd04607bf304fcf3dced07d725da0bc0a05e213e15cf69eac6da"
+      "sha256": "35bd44573a18caf802196cf49fd88cabf163337bbfc4884c24580ddb74e78489"
     },
     {
-      "bytes": 8480,
+      "bytes": 11979,
       "mode": 420,
       "path": "apps/web/src/components/insights/insights-dashboard.tsx",
-      "sha256": "02c59a80e33a02fb9818a2d7c853dc4f2e068a4f477804611dc340f95117a952"
+      "sha256": "1ad32f8fceb0e8dac010d9dd01f5d1f5f09cde709c7526ef7376b66c7291a9f0"
     },
     {
       "bytes": 1119,
@@ -8671,10 +8671,16 @@
       "sha256": "53ec44c7facb42b5dd297b518de28c674d77c02f1902e7ee461b8f38582eca1f"
     },
     {
-      "bytes": 9111,
+      "bytes": 581,
+      "mode": 420,
+      "path": "apps/web/src/components/workspace/assistant-panel.test.ts",
+      "sha256": "ad3ec42f190a8e9a5e550b571ee42eb420a0b5aa78aa8fa7ca068d52dc6ac440"
+    },
+    {
+      "bytes": 10283,
       "mode": 420,
       "path": "apps/web/src/components/workspace/assistant-panel.tsx",
-      "sha256": "80463661df0d5e074d2c82bc94f655a077992b8e26113ac74ec9abb9d5968588"
+      "sha256": "c16a643f7b44aa3306791f7e9bc286086d0c370f1ba30cad9fc88622cbe7153d"
     },
     {
       "bytes": 6586,
@@ -9301,10 +9307,10 @@
       "sha256": "799229d16ba7b2c0fea30f45e4efd4b9c2392cd9aa7d3695030319ce5d7a04e1"
     },
     {
-      "bytes": 2862,
+      "bytes": 2932,
       "mode": 420,
       "path": "package.json",
-      "sha256": "714cfce1d31ad66c36e766e8f3e3d0843ed493dcf6fb64b878e94febf7d5c513"
+      "sha256": "7ee26d3c3ec47be221323a49a992a6e7a90387738a9fa172fc216e67cab1e752"
     },
     {
       "bytes": 7192,
@@ -10129,10 +10135,10 @@
       "sha256": "ab53aebf2ff103fa12e34dee21437d4206fb5afbb472167532d031db0132b4a9"
     },
     {
-      "bytes": 2498,
+      "bytes": 2591,
       "mode": 420,
       "path": "scripts/desktop/generate-release-input-allowlist.ts",
-      "sha256": "e20749de8856489e72995d918595cbaa9f7fd3f526593256c38278f2579ada34"
+      "sha256": "f6a1df3261ecda7a98dec7beeb0dfc0ea3ca9a59ec63dd6912bdd432c6684ade"
     },
     {
       "bytes": 35475,
@@ -10153,10 +10159,10 @@
       "sha256": "52a69e63c2d4f73d594a55648ce9c4af065a8c35920cacf2d9c763bcf868ef18"
     },
     {
-      "bytes": 11562,
+      "bytes": 11574,
       "mode": 420,
       "path": "scripts/desktop/lib/release-input-allowlist.ts",
-      "sha256": "8c129f1fc49cc643528b1cd504099758954243ef12204def151fc20dd6ba7b52"
+      "sha256": "9119769b2c1f8912582fd0026a5c9bb544e2241d664b5eefd5fb94a0bf8a0f58"
     },
     {
       "bytes": 2374,
