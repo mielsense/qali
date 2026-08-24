@@ -1,0 +1,89 @@
+appId: com.qali.desktop
+productName: Qali
+asar: true
+asarUnpack:
+  - "node_modules/@esbuild/darwin-arm64/bin/esbuild"
+  - "node_modules/convex/package.json"
+  - "node_modules/convex/dist/esm/index.js"
+  - "node_modules/convex/dist/esm/server/**/*"
+  - "node_modules/convex/dist/esm/values/**/*"
+  - "node_modules/convex/dist/esm/common/**/*"
+  - "node_modules/zod/package.json"
+  - "node_modules/zod/index.js"
+  - "node_modules/zod/v4/**/*.js"
+directories:
+  output: ../../dist/.electron-builder
+files:
+  - out/**/*
+  - package.json
+  - "!node_modules/**/*.map"
+  - "!node_modules/**/test/**/*"
+  - "!node_modules/**/tests/**/*"
+  - "!node_modules/**/__tests__/**/*"
+  - "!node_modules/**/*.{test,itest,spec}.*"
+  - "!node_modules/@qali"
+  - "!node_modules/@qali/**/*"
+extraResources:
+  - from: ../web/public/icon-512.png
+    to: qali-icon.png
+  - from: ../../dist/.release-inputs/google-oauth-client.json
+    to: google-oauth-client.json
+  - from: resources/bin/keychain-helper
+    to: bin/keychain-helper
+  - from: resources/bin/convex-local-backend
+    to: bin/convex-local-backend
+  - from: resources/bin/convex-generate-key
+    to: bin/convex-generate-key
+  - from: resources/convex-cli
+    to: convex-cli
+    filter:
+      - cli.bundle.cjs
+  - from: resources/release-manifest.json
+    to: release-manifest.json
+  - from: resources/update-policy.json
+    to: update-policy.json
+  - from: resources/codex-provider-manifest.json
+    to: codex-provider-manifest.json
+  - from: resources/codex-planner-output.schema.json
+    to: codex-planner-output.schema.json
+  - from: resources/codex-finalizer-output.schema.json
+    to: codex-finalizer-output.schema.json
+  - from: resources/codex-calendar.sb
+    to: codex-calendar.sb
+  - from: ../../packages/backend/package.json
+    to: convex-backend-project/package.json
+  - from: ../../packages/backend/convex
+    to: convex-backend-project/convex
+    filter:
+      - "**/*"
+      - "!**/*.test.ts"
+      - "!**/*.itest.ts"
+      - "!**/README.md"
+      - "!_generated/ai/**/*"
+  - from: ../../packages/domain/package.json
+    to: app.asar.unpacked/node_modules/@qali/domain/package.json
+  - from: ../../packages/domain/src
+    to: app.asar.unpacked/node_modules/@qali/domain/src
+    filter:
+      - availability.ts
+      - permissions.ts
+      - slug.ts
+mac:
+  category: public.app-category.productivity
+  icon: ../web/public/icon-512.png
+  target:
+    - target: dir
+      arch:
+        - arm64
+  identity: null
+  hardenedRuntime: false
+  notarize: false
+  extendInfo:
+    NSAppTransportSecurity:
+      NSAllowsArbitraryLoads: false
+      NSAllowsLocalNetworking: true
+publish:
+  provider: github
+  owner: mielsense
+  repo: qali
+  releaseType: release

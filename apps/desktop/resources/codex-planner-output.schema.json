@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ids": { "type": "array", "maxItems": 32, "items": { "type": "string", "minLength": 1, "maxLength": 256 } },
+    "range": { "type": "object", "properties": { "startMs": { "type": "integer" }, "endMs": { "type": "integer" } }, "required": ["startMs", "endMs"], "additionalProperties": false }
+  },
+  "type": "object",
+  "properties": {
+    "kind": { "enum": ["clarification", "reads"] },
+    "question": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 1000 }, { "type": "null" }] },
+    "reads": { "anyOf": [{ "type": "array", "maxItems": 8, "items": { "anyOf": [
+      { "type": "object", "properties": { "kind": { "type": "string", "const": "listCalendars" }, "limit": { "type": "integer", "minimum": 1, "maximum": 100 } }, "required": ["kind", "limit"], "additionalProperties": false },
+      { "type": "object", "properties": { "kind": { "type": "string", "const": "searchEvents" }, "calendarIds": { "anyOf": [{ "$ref": "#/$defs/ids" }, { "type": "null" }] }, "startMs": { "type": "integer" }, "endMs": { "type": "integer" }, "query": { "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }] }, "limit": { "type": "integer", "minimum": 1, "maximum": 100 } }, "required": ["kind", "calendarIds", "startMs", "endMs", "query", "limit"], "additionalProperties": false },
+      { "type": "object", "properties": { "kind": { "type": "string", "const": "getEvent" }, "calendarId": { "type": "string", "minLength": 1, "maxLength": 256 }, "eventId": { "type": "string", "minLength": 1, "maxLength": 256 } }, "required": ["kind", "calendarId", "eventId"], "additionalProperties": false },
+      { "type": "object", "properties": { "kind": { "type": "string", "const": "getAvailability" }, "calendarIds": { "anyOf": [{ "$ref": "#/$defs/ids" }, { "type": "null" }] }, "startMs": { "type": "integer" }, "endMs": { "type": "integer" }, "durationMinutes": { "type": "integer", "minimum": 5, "maximum": 1440 }, "limit": { "type": "integer", "minimum": 1, "maximum": 100 } }, "required": ["kind", "calendarIds", "startMs", "endMs", "durationMinutes", "limit"], "additionalProperties": false }
+    ] } }, { "type": "null" }] }
+  },
+  "required": ["kind", "question", "reads"],
+  "additionalProperties": false
+}

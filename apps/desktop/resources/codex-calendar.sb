@@ -1,0 +1,60 @@
+(version 1)
+(deny default)
+
+; The initial image requires one exact exec grant. No child-creation grant
+; exists, and every other executable remains denied.
+(allow process-exec (literal (param "CODEX_EXECUTABLE")))
+(allow process-info* (target self))
+(allow signal (target self))
+
+; Runtime, linker, locale, clock, and explicit Qali inputs only. The work root
+; is created empty and is readable only so it can serve as the process cwd.
+; Codex canonicalizes its isolated roots at startup, which requires ancestor
+; metadata traversal but does not grant access to any ancestor file contents.
+(allow file-read-metadata
+  (literal (param "CODEX_METADATA_PATH_0"))
+  (literal (param "CODEX_METADATA_PATH_1"))
+  (literal (param "CODEX_METADATA_PATH_2"))
+  (literal (param "CODEX_METADATA_PATH_3"))
+  (literal (param "CODEX_METADATA_PATH_4"))
+  (literal (param "CODEX_METADATA_PATH_5"))
+  (literal (param "CODEX_METADATA_PATH_6"))
+  (literal (param "CODEX_METADATA_PATH_7"))
+  (literal (param "CODEX_METADATA_PATH_8"))
+  (literal (param "CODEX_METADATA_PATH_9"))
+  (literal (param "CODEX_METADATA_PATH_10"))
+  (literal (param "CODEX_METADATA_PATH_11"))
+  (literal (param "CODEX_METADATA_PATH_12"))
+  (literal (param "CODEX_METADATA_PATH_13"))
+  (literal (param "CODEX_METADATA_PATH_14"))
+  (literal (param "CODEX_METADATA_PATH_15")))
+(allow file-read*
+  (literal "/")
+  (literal (param "CODEX_EXECUTABLE"))
+  (literal (param "CODEX_SCHEMA"))
+  (literal (param "CODEX_HOME"))
+  (literal (param "CODEX_CWD"))
+  (subpath (param "CODEX_HOME"))
+  (subpath (param "CODEX_CWD"))
+  (subpath "/System/Library")
+  (subpath "/usr/lib")
+  (subpath "/usr/share/locale")
+  (subpath "/private/var/db/timezone")
+  (literal "/dev/null")
+  (literal "/dev/random")
+  (literal "/dev/urandom"))
+
+; Ephemeral state is confined to the isolated Qali Codex home.
+(allow file-write* (subpath (param "CODEX_HOME")))
+(allow file-write-data (literal "/dev/null"))
+
+; The only socket capability is one exact Qali-owned TCP proxy endpoint.
+(allow network-outbound (remote tcp (param "CODEX_PROXY_ENDPOINT")))
+
+; Subscription state remains in the OS Keychain. No generic Unix, POSIX/SysV
+; IPC or listener/general socket grant is present.
+(allow mach-lookup (global-name "com.apple.securityd"))
+(allow mach-lookup (global-name "com.apple.SecurityServer"))
+(allow mach-lookup (global-name "com.apple.cfprefsd.agent"))
+(allow mach-lookup (global-name "com.apple.system.logger"))
+(allow sysctl-read)

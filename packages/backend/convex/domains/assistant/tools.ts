@@ -1,0 +1,1252 @@
+/**
+ * Everything the assistant can do, declared once.
+ *
+ * Each tool carries its zod argument schema, the JSON Schema the model is shown
+ * (derived from that same zod schema, so the two cannot drift), and a handler.
+ *
+ * The split that matters is `kind`:
+ *   - `"read"` tools run immediately inside the agent loop.
+ *   - `"write"` tools never touch Google. They record a row in
+ *     `assistantActions` and hand the model back a result that says, in as many
+ *     words, that nothing has happened yet. Only a confirm click reaches
+ *     `applyProposal` below, and only that appends a local calendar operation.
+ *
+ * So a misread date costs the user a glance at a card, not an invitation email
+ * to their whole guest list.
+ */
+
+import { z } from "zod";
+import { makeFunctionReference } from "convex/server";
+
+import { api, internal } from "../../_generated/api";
+import type { Doc, Id } from "../../_generated/dataModel";
+import type { ActionCtx, MutationCtx } from "../../_generated/server";
+import {
+  acceptCreateEventHandler,
+  acceptDeleteEventHandler,
+  acceptUpdateEventHandler,
+} from "../calendar/mutations";
+import {
+  revalidateAssistantProposal,
+  type AssistantProposal,
+} from "../desktop/assistantBroker";
+import { resolveEventForWrite } from "../calendar/service";
+import {
+  MS_PER_MINUTE,
+  addDaysToDateKey,
+  type Interval,
+  mergeIntervals,
+  allDayBusyInterval,
+  utcToZoned,
+  zonedToUtcMs,
+} from "@qali/domain/availability";
+import { subtractBusy } from "./history";
+import {
+  ASSISTANT_WEEKDAYS,
+  assistantRangeToEventTime,
+  assistantRepeatToRRule,
+  formatAssistantAllDayRange,
+  formatAssistantRepeat,
+  isDateKey,
+  type AssistantRepeat,
+  type AssistantEventRange,
+} from "../../lib/assistantLogic";
+
+// These references exist only so already-persisted hosted-era proposal helpers
+// remain parseable during the local cutover. No exported Convex function can
+// execute the old tool runner, and the removed assistantData functions are not
+// part of the generated API anymore, so an accidental call fails closed.
+const legacyHostedAssistantData = {
+  recordProposal: makeFunctionReference<"mutation">(
+    "assistantData:recordProposal",
+  ),
+  listEventsForAssistant: makeFunctionReference<"query">(
+    "assistantData:listEventsForAssistant",
+  ),
+  getRecurringSeriesVersion: makeFunctionReference<"query">(
+    "assistantData:getRecurringSeriesVersion",
+  ),
+};
+
+// --- Plumbing --------------------------------------------------------------
+
+export interface ToolContext {
+  ctx: ActionCtx;
+  userId: string;
+  threadId: Id<"assistantThreads">;
+  /** The browser's IANA zone for this turn. Never inferred from the runtime. */
+  timeZone: string;
+  nowMs: number;
+}
+
+/** What a tool hands back to the loop. A `proposal` also produces a confirm
+ * card, which is why it carries the row id alongside the model-facing text. */
+export type ToolOutcome =
+  | { kind: "result"; content: string; isError?: boolean }
+  | { kind: "proposal"; content: string; actionId: Id<"assistantActions"> };
+
+export interface AssistantTool {
+  name: string;
+  kind: "read" | "write";
+  description: string;
+  parameters: Record<string, unknown>;
+  run(
+    tc: ToolContext,
+    toolCallId: string,
+    rawArgs: unknown,
+  ): Promise<ToolOutcome>;
+}
+
+const MAX_TOOL_RESULT_CHARS = 8_000;
+
+function jsonSchema(schema: z.ZodType): Record<string, unknown> {
+  const generated = z.toJSONSchema(schema, { io: "input" }) as Record<
+    string,
+    unknown
+  >;
+  // The $schema key is noise in a function definition and only costs prefix
+  // tokens on every request.
+  delete generated.$schema;
+  return generated;
+}
+
+/** Build a read tool: validate, run, serialize. Anything thrown becomes an
+ * error result the model can read and explain rather than a dead turn. */
+function readTool<S extends z.ZodType>(spec: {
+  name: string;
+  description: string;
+  schema: S;
+  run(tc: ToolContext, args: z.infer<S>): Promise<unknown>;
+}): AssistantTool {
+  return {
+    name: spec.name,
+    kind: "read",
+    description: spec.description,
+    parameters: jsonSchema(spec.schema),
+    async run(tc, _toolCallId, rawArgs) {
+      const parsed = spec.schema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return {
+          kind: "result",
+          content: `Invalid arguments: ${parsed.error.message}`,
+          isError: true,
+        };
+      }
+      try {
+        const value = await spec.run(tc, parsed.data);
+        const content = JSON.stringify(value);
+        if (content.length > MAX_TOOL_RESULT_CHARS) {
+          return {
+            kind: "result",
+            content: "That lookup returned too much data. Use a smaller range or a more specific query.",
+            isError: true,
+          };
+        }
+        return { kind: "result", content };
+      } catch (error) {
+        return {
+          kind: "result",
+          content: error instanceof Error ? error.message : String(error),
+          isError: true,
+        };
+      }
+    },
+  };
+}
+
+/**
+ * Build a write tool.
+ *
+ * `preview` does double duty: it produces the sentence the confirm card shows,
+ * and it is where the tool refuses work the user could not do by hand either —
+ * a locked event, a birthday Google generates, a calendar they only have read
+ * access to. It throws for those, and the reason reaches the model as the tool
+ * result, so the user is told why instead of being handed a confirm button that
+ * fails when they press it. No proposal row is written when it throws.
+ */
+function writeTool<S extends z.ZodType>(spec: {
+  name: string;
+  description: string;
+  schema: S;
+  preview(tc: ToolContext, args: z.infer<S>): Promise<string> | string;
+  storedArgs?(
+    tc: ToolContext,
+    args: z.infer<S>,
+  ): Promise<Record<string, unknown>> | Record<string, unknown>;
+}): AssistantTool {
+  return {
+    name: spec.name,
+    kind: "write",
+    description: spec.description,
+    parameters: jsonSchema(spec.schema),
+    async run(tc, toolCallId, rawArgs) {
+      const parsed = spec.schema.safeParse(rawArgs);
+      if (!parsed.success) {
+        return {
+          kind: "result",
+          content: `Invalid arguments: ${parsed.error.message}`,
+          isError: true,
+        };
+      }
+      let preview: string;
+      try {
+        preview = await spec.preview(tc, parsed.data);
+      } catch (error) {
+        return {
+          kind: "result",
+          content: error instanceof Error ? error.message : String(error),
+          isError: true,
+        };
+      }
+
+      const actionId = await tc.ctx.runMutation(
+        legacyHostedAssistantData.recordProposal,
+        {
+          threadId: tc.threadId,
+          userId: tc.userId,
+          toolCallId,
+          tool: spec.name,
+          // The turn's zone rides along with the arguments: the proposal may be
+          // confirmed hours later, from a context that no longer knows it.
+          input: JSON.stringify({
+            ...(parsed.data as object),
+            ...(spec.storedArgs ? await spec.storedArgs(tc, parsed.data) : {}),
+            timeZone: tc.timeZone,
+          }),
+          preview,
+        },
+      );
+
+      return {
+        kind: "proposal",
+        actionId,
+        content:
+          `Proposed: ${preview}. This has NOT happened yet — it is waiting for the ` +
+          `user to confirm it on a card in the app. Tell them what you proposed and ` +
+          `ask them to confirm; do not claim it is done, and do not propose it again.`,
+      };
+    },
+  };
+}
+
+// --- Formatting ------------------------------------------------------------
+
+/** How an instant reads to the user, for previews the model and the confirm
+ * card both show. Always rendered in the turn's zone, never the server's. */
+function formatWhen(ms: number, timeZone: string, allDay = false): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(allDay ? {} : { hour: "numeric", minute: "2-digit" }),
+  }).format(new Date(ms));
+}
+
+function formatRange(
+  startMs: number,
+  endMs: number,
+  timeZone: string,
+  allDay = false,
+): string {
+  if (allDay) {
+    return formatAssistantAllDayRange(
+      new Date(startMs).toISOString().slice(0, 10),
+      new Date(endMs).toISOString().slice(0, 10),
+    );
+  }
+  const end = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(endMs));
+  return `${formatWhen(startMs, timeZone)}–${end}`;
+}
+
+function formatAssistantRange(
+  range: AssistantEventRange,
+  timeZone: string,
+): string {
+  if (range.kind === "allDay") {
+    return formatAssistantAllDayRange(range.startDate, range.endDate);
+  }
+  return formatRange(range.startMs, range.endMs, timeZone);
+}
+
+function previewValue(value: string, max = 120): string {
+  const flat = value.replace(/\s+/g, " ").trim();
+  return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`;
+}
+
+// --- Free-time search ------------------------------------------------------
+
+/** Whether an event blocks the user's time. A "free"-marked event doesn't, a
+ * cancelled one doesn't, and neither does one they've declined — that last
+ * case is the difference between an honest answer and offering a slot the user
+ * already said no to. */
+function isBusy(
+  event: Pick<Doc<"events">, "status" | "transparency" | "attendees">,
+): boolean {
+  if (event.status === "cancelled") return false;
+  if (event.transparency === "transparent") return false;
+  const self = event.attendees?.find((a) => a.self);
+  if (self?.responseStatus === "declined") return false;
+  return true;
+}
+
+// --- The tools -------------------------------------------------------------
+
+const listEventsSchema = z.object({
+  fromMs: z.number().describe("Start of the range, Unix epoch milliseconds."),
+  toMs: z.number().describe("End of the range, Unix epoch milliseconds."),
+});
+
+const listEvents = readTool({
+  name: "list_events",
+  description:
+    "List the events on the user's calendar that overlap a time range. Call " +
+    "this whenever the user asks what is on their calendar, whether they are " +
+    "free, or refers to an existing meeting you have not already looked up — " +
+    "you need the eventId from here before you can change or cancel anything. " +
+    "Timed values are Unix epoch milliseconds; all-day results also include " +
+    "literal startDate and exclusive endDate values.",
+  schema: listEventsSchema,
+  async run(tc, args) {
+    // Personal events plus shared public-calendar events (holidays/birthdays),
+    // which live in a separate deduplicated table. Merged so the assistant sees
+    // holidays alongside the user's own events.
+    const [personal, shared] = await Promise.all([
+      tc.ctx.runQuery(legacyHostedAssistantData.listEventsForAssistant, {
+        userId: tc.userId,
+        startMs: args.fromMs,
+        endMs: args.toMs,
+      }),
+      tc.ctx.runQuery(internal.calendar.listSharedEventsForAssistant, {
+        userId: tc.userId,
+        startMs: args.fromMs,
+        endMs: args.toMs,
+      }),
+    ]);
+    const rows = [...personal, ...shared].sort((a, b) => a.startMs - b.startMs);
+    return rows.map((e) => ({
+      eventId: e._id,
+      summary: e.summary ?? "(No title)",
+      startMs: e.startMs,
+      endMs: e.endMs,
+      ...(e.allDay
+        ? {
+            startDate: new Date(e.startMs).toISOString().slice(0, 10),
+            endDate: new Date(e.endMs).toISOString().slice(0, 10),
+          }
+        : {}),
+      when: formatRange(e.startMs, e.endMs, tc.timeZone, e.allDay),
+      allDay: e.allDay,
+      location: e.location,
+      recurring: Boolean(e.recurringEventId),
+      isOrganizer: e.organizer?.self ?? false,
+      guests: e.attendees?.map((a: { email: string }) => a.email) ?? [],
+      meetLink: e.hangoutLink,
+    }));
+  },
+});
+
+const findFreeTimeSchema = z.object({
+  fromMs: z.number().describe("Earliest instant to consider, epoch ms."),
+  toMs: z.number().describe("Latest instant to consider, epoch ms."),
+  durationMinutes: z
+    .number()
+    .int()
+    .min(5)
+    .max(24 * 60)
+    .describe("How long the meeting needs to be."),
+  dayStartHour: z
+    .number()
+    .int()
+    .min(0)
+    .max(23)
+    .optional()
+    .describe("Earliest hour of the day to offer, local time. Defaults to 9."),
+  dayEndHour: z
+    .number()
+    .int()
+    .min(1)
+    .max(24)
+    .optional()
+    .describe("Latest hour of the day to offer, local time. Defaults to 18."),
+});
+
+const findFreeTime = readTool({
+  name: "find_free_time",
+  description:
+    "Find gaps of at least a given length on the user's calendar, restricted " +
+    "to daytime hours in their own time zone. Call this whenever the user asks " +
+    "when they are free, or asks you to schedule something without naming an " +
+    "exact time — do not guess at availability from list_events yourself.",
+  schema: findFreeTimeSchema,
+  async run(tc, args) {
+    const dayStartMin = (args.dayStartHour ?? 9) * 60;
+    const dayEndMin = (args.dayEndHour ?? 18) * 60;
+    if (dayEndMin <= dayStartMin) {
+      throw new Error("dayEndHour must be later than dayStartHour");
+    }
+    const durationMs = args.durationMinutes * MS_PER_MINUTE;
+
+    const [personal, shared] = await Promise.all([
+      tc.ctx.runQuery(legacyHostedAssistantData.listEventsForAssistant, {
+        userId: tc.userId,
+        startMs: args.fromMs,
+        endMs: args.toMs,
+      }),
+      tc.ctx.runQuery(internal.calendar.listSharedEventsForAssistant, {
+        userId: tc.userId,
+        startMs: args.fromMs,
+        endMs: args.toMs,
+      }),
+    ]);
+    // Holidays are transparency:"transparent", so isBusy drops them and they
+    // never block a slot — but a holiday marked busy correctly would.
+    const rows = [...personal, ...shared];
+    const busy = mergeIntervals(
+      [
+        ...rows.filter(isBusy).map((e) =>
+          e.allDay
+            ? allDayBusyInterval(e.startMs, e.endMs, tc.timeZone)
+            : { startMs: e.startMs, endMs: e.endMs },
+        ),
+      ],
+    );
+
+    // Walk calendar days rather than fixed 24h blocks, so a DST change doesn't
+    // slide the working-hours window by an hour partway through the range.
+    const windows: Interval[] = [];
+    const lastKey = utcToZoned(args.toMs, tc.timeZone).dateKey;
+    let key = utcToZoned(args.fromMs, tc.timeZone).dateKey;
+    for (let i = 0; i < 400 && key <= lastKey; i += 1) {
+      const startMs = Math.max(
+        zonedToUtcMs(key, dayStartMin, tc.timeZone),
+        args.fromMs,
+        // Never offer a slot in the past.
+        tc.nowMs,
+      );
+      const endMs = Math.min(
+        zonedToUtcMs(key, dayEndMin, tc.timeZone),
+        args.toMs,
+      );
+      if (endMs - startMs >= durationMs) {
+        windows.push({ startMs, endMs });
+      }
+      key = addDaysToDateKey(key, 1);
+    }
+
+    const free = windows
+      .flatMap((w) => subtractBusy(w, busy))
+      .filter((gap) => gap.endMs - gap.startMs >= durationMs)
+      .slice(0, 25);
+
+    return {
+      durationMinutes: args.durationMinutes,
+      timeZone: tc.timeZone,
+      openings: free.map((gap) => ({
+        startMs: gap.startMs,
+        // The latest this meeting could start and still fit in the gap.
+        latestStartMs: gap.endMs - durationMs,
+        when: formatRange(gap.startMs, gap.endMs, tc.timeZone),
+      })),
+    };
+  },
+});
+
+const searchContacts = readTool({
+  name: "search_contacts",
+  description:
+    "Look up a person's email address among the people the user knows — saved " +
+    "Google contacts plus anyone they've met on their calendar — by name or " +
+    "partial email. Call this before adding a guest the user referred to by " +
+    "first name only — never invent or guess an email address.",
+  schema: z.object({
+    query: z.string().min(1).describe("Name or partial email to match."),
+  }),
+  async run(tc, args) {
+    const needle = args.query.trim().toLowerCase();
+    const rows = await tc.ctx.runQuery(api.people.listPeople, {});
+    return rows
+      .filter(
+        (p) =>
+          p.displayName?.toLowerCase().includes(needle) ||
+          p.email.toLowerCase().includes(needle),
+      )
+      .slice(0, 10)
+      .map((p) => ({ name: p.displayName, email: p.email }));
+  },
+});
+
+const timedRangeSchema = z
+  .object({
+    kind: z.literal("timed"),
+    startMs: z.number().finite().describe("Start instant, epoch ms."),
+    endMs: z.number().finite().describe("End instant, epoch ms."),
+  })
+  .refine((range) => range.endMs > range.startMs, {
+    message: "endMs must be later than startMs",
+  });
+
+const dateKeySchema = z
+  .string()
+  .refine(isDateKey, "Use a real calendar date in YYYY-MM-DD form");
+
+const allDayRangeSchema = z
+  .object({
+    kind: z.literal("allDay"),
+    startDate: dateKeySchema.describe("First calendar date, YYYY-MM-DD."),
+    endDate: dateKeySchema.describe(
+      "Exclusive end date, YYYY-MM-DD. For one day, use the following date.",
+    ),
+  })
+  .refine((range) => range.endDate > range.startDate, {
+    message: "endDate must be later than startDate",
+  });
+
+const eventRangeSchema = z.union([timedRangeSchema, allDayRangeSchema]);
+
+const repeatEndSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("never") }),
+  z.object({
+    kind: z.literal("onDate"),
+    date: dateKeySchema.describe("Inclusive final local calendar date."),
+  }),
+  z.object({
+    kind: z.literal("count"),
+    count: z.number().int().min(1).max(10_000),
+  }),
+]);
+
+const repeatFields = {
+  interval: z
+    .number()
+    .int()
+    .min(1)
+    .max(1_000)
+    .optional()
+    .describe("Repeat every N periods. Omit for every 1 period."),
+  end: repeatEndSchema
+    .optional()
+    .describe('When repetition stops. Omit or use {"kind":"never"} for no end.'),
+};
+
+const repeatSchema = z
+  .discriminatedUnion("frequency", [
+    z.object({ frequency: z.literal("daily"), ...repeatFields }),
+    z.object({
+      frequency: z.literal("weekly"),
+      weekdays: z
+        .array(z.enum(ASSISTANT_WEEKDAYS))
+        .min(1)
+        .max(7)
+        .describe(
+          "Every weekday in this one weekly series. Use full lowercase names.",
+        ),
+      ...repeatFields,
+    }),
+    z.object({ frequency: z.literal("monthly"), ...repeatFields }),
+    z.object({ frequency: z.literal("yearly"), ...repeatFields }),
+  ])
+  .describe(
+    "Structured recurrence. The event's start is the first occurrence and anchors monthly/yearly rules.",
+  );
+
+const recurrenceLinesSchema = z.array(z.string().max(500)).max(10);
+
+function rowRange(row: Doc<"events">): AssistantEventRange {
+  return row.allDay
+    ? {
+        kind: "allDay",
+        startDate: new Date(row.startMs).toISOString().slice(0, 10),
+        endDate: new Date(row.endMs).toISOString().slice(0, 10),
+      }
+    : { kind: "timed", startMs: row.startMs, endMs: row.endMs };
+}
+
+function storedRecurrence(raw: unknown, key: string): string[] | undefined {
+  if (typeof raw !== "object" || raw === null || !(key in raw)) return undefined;
+  const parsed = recurrenceLinesSchema.safeParse(
+    (raw as Record<string, unknown>)[key],
+  );
+  if (!parsed.success) throw new Error("Stored recurrence is invalid");
+  return parsed.data;
+}
+
+const createEventSchema = z.object({
+  summary: z.string().min(1).max(500).describe("Event title."),
+  time: eventRangeSchema.describe(
+    "Timed events use epoch milliseconds. All-day events use calendar dates and an exclusive end date; never convert those dates through a timezone.",
+  ),
+  description: z.string().max(4_000).optional(),
+  location: z.string().max(1_000).optional(),
+  guestEmails: z
+    .array(z.string().email().max(320))
+    .max(200)
+    .optional()
+    .describe(
+      "Email addresses to invite. Google emails each one an invitation the " +
+        "moment the user confirms, so only include addresses you have " +
+        "confirmed via search_contacts or that the user typed themselves.",
+    ),
+  addConference: z
+    .boolean()
+    .optional()
+    .describe("Attach a Google Meet link."),
+  repeat: repeatSchema.optional(),
+});
+
+const createEvent = writeTool({
+  name: "create_event",
+  description:
+    "Propose creating a new event on the user's primary calendar. Use this " +
+    "for any request to schedule, book, or block out time. The event is not " +
+    "created and no invitations are sent until the user confirms.",
+  schema: createEventSchema,
+  preview(tc, args) {
+    const parts = [`at ${formatAssistantRange(args.time, tc.timeZone)}`];
+    if (args.description !== undefined) {
+      parts.push(`description “${previewValue(args.description)}”`);
+    }
+    if (args.location !== undefined) {
+      parts.push(`location “${previewValue(args.location)}”`);
+    }
+    if (args.guestEmails !== undefined) {
+      parts.push(
+        args.guestEmails.length
+          ? `invite ${args.guestEmails.join(", ")}`
+          : "no guests",
+      );
+    }
+    if (args.addConference !== undefined) {
+      parts.push(args.addConference ? "add Google Meet" : "no conference");
+    }
+    if (args.repeat !== undefined) {
+      assistantRepeatToRRule(args.repeat, args.time, tc.timeZone);
+      parts.push(`repeat ${formatAssistantRepeat(args.repeat, args.time, tc.timeZone)}`);
+    }
+    return `Create “${args.summary}”: ${parts.join(" · ")}`;
+  },
+});
+
+const updateEventSchema = z.object({
+  eventId: z.string().describe("The eventId from list_events."),
+  summary: z.string().min(1).max(500).optional(),
+  description: z.string().max(4_000).optional(),
+  location: z.string().max(1_000).optional(),
+  time: eventRangeSchema.optional().describe(
+    "Replacement time. Use date-only startDate/endDate for all-day events.",
+  ),
+  guestEmails: z
+    .array(z.string().email().max(320))
+    .max(200)
+    .optional()
+    .describe("Replaces the guest list wholesale — anyone omitted is uninvited."),
+  repeat: repeatSchema
+    .optional()
+    .describe("Turn a single, non-repeating event into a recurring series."),
+  scope: z
+    .enum(["thisEvent", "thisAndFollowing", "allEvents"])
+    .optional()
+    .describe(
+      "For a recurring event, how far the change reaches. Ask the user which " +
+        "they mean rather than assuming. Defaults to this occurrence only.",
+    ),
+});
+
+/** Refuse an edit the user could not make by hand either. `resolveEventForWrite`
+ * throws with the reason, which becomes the model's tool result. */
+async function requireEditable(tc: ToolContext, eventId: string): Promise<Doc<"events">> {
+  const { row } = await resolveEventForWrite(
+    tc.ctx,
+    tc.userId,
+    eventId as Id<"events">,
+    ["canEdit"],
+  );
+  return row;
+}
+
+const updateEvent = writeTool({
+  name: "update_event",
+  description:
+    "Propose changing an existing event's title, description, location, guest " +
+    "list, times, or turn a non-repeating event into a recurring series. " +
+    "Requires an eventId from list_events. Nothing changes and no guest is " +
+    "notified until the user confirms.",
+  schema: updateEventSchema,
+  async preview(tc, args) {
+    const { row, capabilities } = await resolveEventForWrite(
+      tc.ctx,
+      tc.userId,
+      args.eventId as Id<"events">,
+      ["canEdit"],
+    );
+    if (args.guestEmails !== undefined && !capabilities.canInviteOthers) {
+      throw new Error("The organiser does not allow you to invite or remove guests");
+    }
+    if (args.repeat !== undefined && !capabilities.canChangeRecurrence) {
+      throw new Error("This event is already part of a recurring series");
+    }
+    const parts: string[] = [];
+    if (args.summary !== undefined) parts.push(`title → “${args.summary}”`);
+    if (args.time !== undefined) {
+      parts.push(`time → ${formatAssistantRange(args.time, tc.timeZone)}`);
+    }
+    if (args.location !== undefined) {
+      parts.push(`location → “${previewValue(args.location)}”`);
+    }
+    if (args.description !== undefined) {
+      parts.push(`description → “${previewValue(args.description)}”`);
+    }
+    if (args.guestEmails !== undefined) {
+      parts.push(
+        args.guestEmails.length
+          ? `guests → ${args.guestEmails.join(", ")}`
+          : "all guests removed",
+      );
+    }
+    if (args.repeat !== undefined) {
+      const range = args.time ?? rowRange(row);
+      assistantRepeatToRRule(args.repeat, range, tc.timeZone);
+      parts.push(
+        `repeat → ${formatAssistantRepeat(args.repeat, range, tc.timeZone)}`,
+      );
+    }
+    const scope =
+      row.recurringEventId && args.scope && args.scope !== "thisEvent"
+        ? args.scope === "allEvents"
+          ? " (whole series)"
+          : " (this and following)"
+        : "";
+    return `Update “${row.summary ?? "(No title)"}”${scope}: ${parts.join(", ") || "no changes"}`;
+  },
+  async storedArgs(tc, args) {
+    if (args.guestEmails === undefined && args.repeat === undefined) return {};
+    const row = await requireEditable(tc, args.eventId);
+    if (args.repeat !== undefined && row.recurringEventId !== undefined) {
+      throw new Error("This event is already part of a recurring series");
+    }
+    const editsSeries =
+      row.recurringEventId !== undefined &&
+      args.scope !== undefined &&
+      args.scope !== "thisEvent";
+    const expectedSeriesUpdatedMs = editsSeries
+      ? await tc.ctx.runQuery(
+          legacyHostedAssistantData.getRecurringSeriesVersion,
+          { userId: tc.userId, eventId: row._id },
+        )
+      : null;
+    if (editsSeries && expectedSeriesUpdatedMs === null) {
+      throw new Error(
+        "The recurring series is not fully synced yet. Refresh it before changing guests.",
+      );
+    }
+    return {
+      expectedGoogleUpdatedMs: row.googleUpdatedMs,
+      ...(args.repeat === undefined
+        ? {}
+        : {
+            compiledRecurrence: assistantRepeatToRRule(
+              args.repeat,
+              args.time ?? rowRange(row),
+              tc.timeZone,
+            ),
+          }),
+      ...(expectedSeriesUpdatedMs === null ? {} : { expectedSeriesUpdatedMs }),
+    };
+  },
+});
+
+const moveEventSchema = z.object({
+  eventId: z.string().describe("The eventId from list_events."),
+  time: eventRangeSchema.describe(
+    "New time. For an all-day event use startDate and exclusive endDate, not epoch milliseconds.",
+  ),
+});
+
+const moveEvent = writeTool({
+  name: "move_event",
+  description:
+    "Propose rescheduling one event, keeping everything else about it the " +
+    "same. Prefer this over update_event when only the time changes. The event " +
+    "does not move until the user confirms.",
+  schema: moveEventSchema,
+  async preview(tc, args) {
+    const row = await requireEditable(tc, args.eventId);
+    return (
+      `Move “${row.summary ?? "(No title)"}” from ` +
+      `${formatRange(row.startMs, row.endMs, tc.timeZone, row.allDay)} to ` +
+      `${formatAssistantRange(args.time, tc.timeZone)}`
+    );
+  },
+});
+
+const deleteEventSchema = z.object({
+  eventId: z.string().describe("The eventId from list_events."),
+  scope: z
+    .enum(["thisEvent", "thisAndFollowing", "allEvents"])
+    .describe(
+      "Required. For a recurring event, ask which scope the user means before proposing. Use thisEvent for a non-recurring event.",
+    ),
+});
+
+const deleteEvent = writeTool({
+  name: "delete_event",
+  description:
+    "Propose deleting an event with an explicit scope. For a recurring event, " +
+    "ask whether the user means this occurrence, this and following, or the " +
+    "whole series before calling. A guest may use thisEvent or allEvents, but " +
+    "only the organizer may use thisAndFollowing. Nothing is deleted until " +
+    "the user confirms.",
+  schema: deleteEventSchema,
+  async preview(tc, args) {
+    const { row, capabilities } = await resolveEventForWrite(
+      tc.ctx,
+      tc.userId,
+      args.eventId as Id<"events">,
+      ["canDelete", "canRemoveSelf"],
+    );
+    const guests = row.attendees?.length ?? 0;
+    const recurring = row.recurringEventId !== undefined;
+    if (!recurring && args.scope !== "thisEvent") {
+      throw new Error("A non-recurring event only has one occurrence");
+    }
+    if (
+      recurring &&
+      args.scope === "thisAndFollowing" &&
+      !capabilities.isOrganizer
+    ) {
+      throw new Error(
+        "Only the organizer can remove this and following events from the series",
+      );
+    }
+    const scope = !recurring
+      ? ""
+      : args.scope === "thisEvent"
+        ? " (this occurrence)"
+        : args.scope === "thisAndFollowing"
+          ? " (this and following)"
+          : " (whole series)";
+    const title = `“${row.summary ?? "(No title)"}”${scope}`;
+    const verb = capabilities.isOrganizer
+      ? guests > 0
+        ? `Cancel ${title} and notify ${guests} guest${guests === 1 ? "" : "s"}`
+        : `Delete ${title}`
+      : `Remove ${title} from your calendar`;
+    return `${verb} · ${formatRange(row.startMs, row.endMs, tc.timeZone, row.allDay)}`;
+  },
+  async storedArgs(tc, args) {
+    if (args.scope !== "thisAndFollowing") return {};
+    const row = await requireEditable(tc, args.eventId);
+    const expectedSeriesUpdatedMs = await tc.ctx.runQuery(
+      legacyHostedAssistantData.getRecurringSeriesVersion,
+      { userId: tc.userId, eventId: row._id },
+    );
+    if (expectedSeriesUpdatedMs === null) {
+      throw new Error(
+        "The recurring series is not fully synced yet. Refresh it before deleting future events.",
+      );
+    }
+    return { expectedSeriesUpdatedMs };
+  },
+});
+
+/** Keep registration order deterministic for the desktop assistant protocol. */
+export const ASSISTANT_TOOLS: AssistantTool[] = [
+  listEvents,
+  findFreeTime,
+  searchContacts,
+  createEvent,
+  updateEvent,
+  moveEvent,
+  deleteEvent,
+];
+
+export const TOOLS_BY_NAME = new Map(ASSISTANT_TOOLS.map((t) => [t.name, t]));
+
+function proposalRange(range: { kind: "timed"; startMs: number; endMs: number } | { kind: "allDay"; startDate: string; endDate: string }) {
+  return range.kind === "timed"
+    ? { startMs: range.startMs, endMs: range.endMs, allDay: false }
+    : {
+        startMs: Date.parse(`${range.startDate}T00:00:00.000Z`),
+        endMs: Date.parse(`${range.endDate}T00:00:00.000Z`),
+        allDay: true,
+      };
+}
+
+function proposalRecurrence(
+  recurrence: Extract<AssistantProposal, { kind: "create" }>["recurrence"],
+  range: AssistantEventRange,
+  timeZone: string,
+): string[] | undefined {
+  if (!recurrence) return undefined;
+  return assistantRepeatToRRule(recurrence as AssistantRepeat, range, timeZone);
+}
+
+/** Confirm a Task 13 proposal without leaving the Convex transaction. */
+export async function applyStoredAssistantProposal(
+  ctx: MutationCtx,
+  userId: string,
+  action: Doc<"assistantActions">,
+  operationId: string,
+): Promise<string> {
+  const parsed = JSON.parse(action.input) as unknown;
+  const storedTimeZone =
+    parsed && typeof parsed === "object" && "timeZone" in parsed &&
+    typeof parsed.timeZone === "string"
+      ? parsed.timeZone
+      : undefined;
+  if (parsed && typeof parsed === "object" && "kind" in parsed) {
+    if (!["create", "update", "delete"].includes(String(parsed.kind))) {
+      throw new Error("ASSISTANT_PROPOSAL_INVALID");
+    }
+    const proposal = parsed as AssistantProposal;
+    if (action.tool !== `${proposal.kind}_event`) {
+      throw new Error("ASSISTANT_PROPOSAL_INVALID");
+    }
+    const target = await revalidateAssistantProposal(ctx, userId, proposal);
+    if (proposal.kind === "create") {
+      if (!storedTimeZone) throw new Error("The proposal is missing its time zone");
+      await acceptCreateEventHandler(ctx, {
+        userId,
+        operationId,
+        calendarId: proposal.calendarId,
+        summary: proposal.summary,
+        ...proposalRange(proposal.time),
+        description: proposal.description,
+        location: proposal.location,
+        attendees: proposal.attendees?.map((email) => ({ email })),
+        recurrence: proposalRecurrence(
+          proposal.recurrence,
+          proposal.time,
+          storedTimeZone,
+        ),
+      });
+      return `Created “${proposal.summary}”.`;
+    }
+    if (proposal.kind === "update") {
+      const time = proposal.changes.time
+        ? proposalRange(proposal.changes.time)
+        : undefined;
+      const recurrenceRange =
+        proposal.changes.time ??
+        (target.event ? rowRange(target.event) : undefined);
+      if (proposal.changes.recurrence && (!storedTimeZone || !recurrenceRange)) {
+        throw new Error("The recurring-event proposal is incomplete");
+      }
+      await acceptUpdateEventHandler(ctx, {
+        userId,
+        operationId,
+        eventId: target.event!._id,
+        summary: proposal.changes.summary,
+        description: proposal.changes.description,
+        location: proposal.changes.location,
+        attendees: proposal.changes.attendees?.map((email) => ({ email })),
+        recurrence:
+          proposal.changes.recurrence === null
+            ? null
+            : proposalRecurrence(
+                proposal.changes.recurrence,
+                recurrenceRange!,
+                storedTimeZone!,
+              ),
+        startMs: time?.startMs,
+        endMs: time?.endMs,
+        allDay: time?.allDay,
+        scope: proposal.scope,
+        expectedGoogleUpdatedMs: proposal.expectedUpdatedAt,
+      });
+      return "Event updated.";
+    }
+    await acceptDeleteEventHandler(ctx, {
+      userId,
+      operationId,
+      eventId: target.event!._id,
+      scope: proposal.scope,
+    });
+    return "Event deleted.";
+  }
+
+  const raw = normalizeLegacyDeleteScope(action.tool, parsed);
+  const legacyTimeZone =
+    raw && typeof raw === "object" && "timeZone" in raw &&
+    typeof raw.timeZone === "string"
+      ? raw.timeZone
+      : undefined;
+  if (action.tool === "create_event") {
+    const args = createEventSchema.parse(raw);
+    const time = assistantRangeToEventTime(args.time);
+    if (args.repeat && !legacyTimeZone) {
+      throw new Error("The proposal is missing its time zone");
+    }
+    await acceptCreateEventHandler(ctx, {
+      userId,
+      operationId,
+      summary: args.summary,
+      ...time,
+      description: args.description,
+      location: args.location,
+      attendees: args.guestEmails?.map((email) => ({ email })),
+      addConference: args.addConference,
+      recurrence: args.repeat
+        ? assistantRepeatToRRule(args.repeat, args.time, legacyTimeZone!)
+        : storedRecurrence(raw, "recurrence"),
+      timeZone: legacyTimeZone,
+    });
+    return `Created “${args.summary}”.`;
+  }
+  if (action.tool === "update_event") {
+    const args = updateEventSchema.parse(raw);
+    const time = args.time ? assistantRangeToEventTime(args.time) : undefined;
+    const event = await ctx.db.get(args.eventId as Id<"events">);
+    if (!event || event.userId !== userId) throw new Error("Event not found");
+    if (args.repeat && !legacyTimeZone) {
+      throw new Error("The proposal is missing its time zone");
+    }
+    const repeatRange = args.time ?? rowRange(event);
+    await acceptUpdateEventHandler(ctx, {
+      userId,
+      operationId,
+      eventId: event._id,
+      summary: args.summary,
+      description: args.description,
+      location: args.location,
+      attendees: args.guestEmails?.map((email) => ({ email })),
+      recurrence: args.repeat
+        ? assistantRepeatToRRule(args.repeat, repeatRange, legacyTimeZone!)
+        : undefined,
+      startMs: time?.startMs,
+      endMs: time?.endMs,
+      allDay: time?.allDay,
+      scope: args.scope,
+      expectedGoogleUpdatedMs:
+        raw && typeof raw === "object" && "expectedGoogleUpdatedMs" in raw &&
+        typeof raw.expectedGoogleUpdatedMs === "number"
+          ? raw.expectedGoogleUpdatedMs
+          : undefined,
+    });
+    return "Event updated.";
+  }
+  if (action.tool === "move_event") {
+    const args = moveEventSchema.parse(raw);
+    const time = assistantRangeToEventTime(args.time);
+    await acceptUpdateEventHandler(ctx, {
+      userId,
+      operationId,
+      eventId: args.eventId as Id<"events">,
+      ...time,
+      timeZone: legacyTimeZone,
+    });
+    return "Event rescheduled.";
+  }
+  if (action.tool === "delete_event") {
+    const args = deleteEventSchema.parse(raw);
+    await acceptDeleteEventHandler(ctx, {
+      userId,
+      operationId,
+      eventId: args.eventId as Id<"events">,
+      scope: args.scope,
+    });
+    return "Event deleted.";
+  }
+
+  throw new Error("The stored proposal format is no longer supported");
+}
+
+// --- Applying a confirmed proposal -----------------------------------------
+
+/**
+ * Carry out a proposal the user confirmed.
+ *
+ * The stored arguments are parsed against the same zod schema the model was
+ * held to, not trusted because they are already in the database — the row has
+ * been sitting where a schema change or a bad write could have reached it.
+ */
+export async function applyProposal(
+  ctx: ActionCtx,
+  userId: string,
+  action: Doc<"assistantActions">,
+): Promise<string> {
+  const stored: unknown = JSON.parse(action.input);
+  const raw = await normalizeStoredProposal(
+    ctx,
+    userId,
+    action.tool,
+    stored,
+  );
+  const timeZone =
+    typeof raw === "object" && raw !== null && "timeZone" in raw
+      ? String((raw as { timeZone: unknown }).timeZone)
+      : undefined;
+  const operationId = action.operationId ?? String(action._id);
+  const proposalTimeZone = () => {
+    if (!timeZone) throw new Error("The proposal is missing its time zone");
+    return timeZone;
+  };
+
+  switch (action.tool) {
+    case "create_event": {
+      const args = createEventSchema.parse(raw);
+      const time = assistantRangeToEventTime(args.time);
+      // Proposals created before the structured repeat contract stored raw
+      // recurrence lines. Keep those confirmable while hiding RRULE from all
+      // newly generated tool definitions.
+      const recurrence = args.repeat
+        ? assistantRepeatToRRule(
+            args.repeat,
+            args.time,
+            proposalTimeZone(),
+          )
+        : storedRecurrence(raw, "recurrence");
+      const event = await ctx.runMutation(internal.calendar.acceptCreateEvent, {
+        userId,
+        summary: args.summary,
+        ...time,
+        description: args.description,
+        location: args.location,
+        attendees: args.guestEmails?.map((email) => ({ email })),
+        addConference: args.addConference,
+        recurrence,
+        timeZone,
+        operationId,
+      });
+      return `Created “${event.summary ?? args.summary}”.`;
+    }
+    case "update_event": {
+      const args = updateEventSchema.parse(raw);
+      const time = args.time ? assistantRangeToEventTime(args.time) : undefined;
+      const recurrence = args.repeat
+        ? storedRecurrence(raw, "compiledRecurrence")
+        : undefined;
+      if (args.repeat && !recurrence) {
+        throw new Error("The recurring-event proposal is incomplete");
+      }
+      const expectedGoogleUpdatedMs =
+        typeof raw === "object" &&
+        raw !== null &&
+        "expectedGoogleUpdatedMs" in raw &&
+        typeof raw.expectedGoogleUpdatedMs === "number"
+          ? raw.expectedGoogleUpdatedMs
+          : undefined;
+      const expectedSeriesUpdatedMs =
+        typeof raw === "object" &&
+        raw !== null &&
+        "expectedSeriesUpdatedMs" in raw &&
+        typeof raw.expectedSeriesUpdatedMs === "number"
+          ? raw.expectedSeriesUpdatedMs
+          : undefined;
+      await ctx.runMutation(internal.calendar.acceptUpdateEvent, {
+        userId,
+        eventId: args.eventId as Id<"events">,
+        summary: args.summary,
+        description: args.description,
+        location: args.location,
+        startMs: time?.startMs,
+        endMs: time?.endMs,
+        allDay: time?.allDay,
+        attendees: args.guestEmails?.map((email) => ({ email })),
+        recurrence,
+        scope: args.scope,
+        timeZone,
+        operationId,
+        expectedGoogleUpdatedMs,
+        expectedSeriesUpdatedMs,
+      });
+      return "Event updated.";
+    }
+    case "move_event": {
+      const args = moveEventSchema.parse(raw);
+      const time = assistantRangeToEventTime(args.time);
+      await ctx.runMutation(internal.calendar.acceptUpdateEvent, {
+        userId,
+        eventId: args.eventId as Id<"events">,
+        ...time,
+        timeZone,
+        operationId,
+      });
+      return "Event rescheduled.";
+    }
+    case "delete_event": {
+      const args = deleteEventSchema.parse(raw);
+      const expectedSeriesUpdatedMs =
+        typeof raw === "object" &&
+        raw !== null &&
+        "expectedSeriesUpdatedMs" in raw &&
+        typeof raw.expectedSeriesUpdatedMs === "number"
+          ? raw.expectedSeriesUpdatedMs
+          : undefined;
+      await ctx.runMutation(internal.calendar.acceptDeleteEvent, {
+        userId,
+        eventId: args.eventId as Id<"events">,
+        scope: args.scope,
+        operationId,
+        expectedSeriesUpdatedMs,
+      });
+      return "Event deleted.";
+    }
+    default:
+      throw new Error(`Unknown proposal type: ${action.tool}`);
+  }
+}
+
+/** Pending proposals created before the date-only contract may still be on
+ * screen. Normalize only those persisted shapes at apply time; newly generated
+ * tool schemas expose the unambiguous `time` union exclusively. */
+export function normalizeLegacyDeleteScope(
+  tool: string,
+  raw: unknown,
+): unknown {
+  return tool === "delete_event" &&
+    typeof raw === "object" &&
+    raw !== null &&
+    !("scope" in raw)
+    ? { ...raw, scope: "thisEvent" }
+    : raw;
+}
+
+async function normalizeStoredProposal(
+  ctx: ActionCtx,
+  userId: string,
+  tool: string,
+  raw: unknown,
+): Promise<unknown> {
+  raw = normalizeLegacyDeleteScope(tool, raw);
+  if (
+    typeof raw !== "object" ||
+    raw === null ||
+    "time" in raw ||
+    !("startMs" in raw) ||
+    !("endMs" in raw) ||
+    typeof raw.startMs !== "number" ||
+    typeof raw.endMs !== "number"
+  ) {
+    return raw;
+  }
+
+  let allDay =
+    tool === "create_event" && "allDay" in raw && raw.allDay === true;
+  if (
+    (tool === "update_event" || tool === "move_event") &&
+    "eventId" in raw &&
+    typeof raw.eventId === "string"
+  ) {
+    const context = await ctx.runQuery(internal.calendar.getEventContext, {
+      eventId: raw.eventId as Id<"events">,
+      userId,
+    });
+    allDay = context?.event.allDay ?? false;
+  }
+
+  return {
+    ...raw,
+    time: allDay
+      ? {
+          kind: "allDay",
+          startDate: new Date(raw.startMs).toISOString().slice(0, 10),
+          endDate: new Date(raw.endMs).toISOString().slice(0, 10),
+        }
+      : { kind: "timed", startMs: raw.startMs, endMs: raw.endMs },
+  };
+}

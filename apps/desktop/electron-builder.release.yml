@@ -1,0 +1,15 @@
+extends: ./electron-builder.yml
+directories:
+  output: ../../dist/release
+artifactName: Qali-${version}-${arch}.${ext}
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+  identity: null
+  hardenedRuntime: false
+  notarize: false

@@ -1,0 +1,9 @@
+{
+  "extends": "@qali/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "electron", "electron-vite/node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["test"]
+}

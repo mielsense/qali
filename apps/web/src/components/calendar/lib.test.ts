@@ -1,0 +1,783 @@
+// @ts-expect-error Bun supplies its test module at runtime; the web app's
+// TypeScript config intentionally includes browser globals only.
+import { describe, expect, test } from "bun:test";
+
+import {
+  ALLDAY_BAND_PADDING,
+  ALLDAY_EVENT_GAP,
+  ALLDAY_EVENT_HEIGHT,
+  calendarDisplayName,
+  type CalendarEvent,
+  formatWallClockMinutes,
+  eventHorizontalBox,
+  LANE_ADVANCE_RATIO,
+  laneBox,
+  WEEK_LANE_TILE_MAX_STAGGER_MS,
+  layoutAllDayEvents,
+  layoutDayEvents,
+  visibleAllDayMetrics,
+  visibleMonthEventMetrics,
+  addPages,
+  eventQueryRange,
+  MS_PER_DAY,
+  MIN_DAY_HEIGHT,
+  nextFreeSlot,
+  pageDays,
+  pageStart,
+  STRIP_SIDE_DAYS,
+  stripDays,
+  VIEW_BUFFER,
+  VIEW_COLUMNS,
+} from "./lib";
+import { createZonedCalendarClock, parseCivilDate } from "./zoned-calendar-clock";
+
+process.env.SKIP_ENV_VALIDATION = "1";
+const { newEventDefaults } = await import("./event-create");
+const { createGridEventDraft } = await import("./day-column");
+const { resolveDraggedWallTime, resolveResizeWallTime } = await import("./use-event-drag");
+
+const days = Array.from({ length: 5 }, (_, i) => new Date(2026, 0, 5 + i));
+
+const dayStart = new Date(2026, 0, 5).getTime();
+/** A timed event on the test day, from `startH:startM` to `endH:endM` (24h). */
+function timedEvent(
+  id: string,
+  startH: number,
+  startM: number,
+  endH: number,
+  endM: number,
+): CalendarEvent {
+  const at = (h: number, m: number) => dayStart + (h * 60 + m) * 60_000;
+  return {
+    _id: id,
+    startMs: at(startH, startM),
+    endMs: at(endH, endM),
+  } as unknown as CalendarEvent;
+}
+
+function allDayEvent(
+  id: string,
+  startDay: number,
+  endDayExclusive: number,
+): CalendarEvent {
+  return {
+    _id: id,
+    startMs: Date.UTC(2026, 0, 5 + startDay),
+    endMs: Date.UTC(2026, 0, 5 + endDayExclusive),
+    allDay: true,
+  } as unknown as CalendarEvent;
+}
+
+describe("nextFreeSlot", () => {
+  const at = (h: number, m = 0) => dayStart + (h * 60 + m) * 60_000;
+  // A moment before the test day so "today" logic never kicks in for it.
+  const beforeDay = dayStart - MS_PER_DAY;
+
+  test("defaults to 9:00 AM for 30 minutes on an empty future day", () => {
+    expect(nextFreeSlot(dayStart, [], beforeDay)).toEqual({
+      startMs: at(9),
+      endMs: at(9, 30),
+    });
+  });
+
+  test("skips past an event that blocks the 9 AM slot", () => {
+    const slot = nextFreeSlot(dayStart, [timedEvent("a", 9, 0, 10, 0)], beforeDay);
+    expect(slot).toEqual({ startMs: at(10), endMs: at(10, 30) });
+  });
+
+  test("finds the gap between two meetings", () => {
+    const events = [
+      timedEvent("a", 9, 0, 9, 30),
+      timedEvent("b", 10, 0, 11, 0),
+    ];
+    expect(nextFreeSlot(dayStart, events, beforeDay)).toEqual({
+      startMs: at(9, 30),
+      endMs: at(10),
+    });
+  });
+
+  test("ignores all-day events", () => {
+    const slot = nextFreeSlot(dayStart, [allDayEvent("a", 0, 1)], beforeDay);
+    expect(slot).toEqual({ startMs: at(9), endMs: at(9, 30) });
+  });
+
+  test("starts from the next snap boundary when the day is today", () => {
+    const now = at(13, 5);
+    expect(nextFreeSlot(dayStart, [], now)).toEqual({
+      startMs: at(13, 15),
+      endMs: at(13, 45),
+    });
+  });
+
+  test("stays at 9 AM on a past day even though now is later", () => {
+    // now is on a day after the target: the target isn't today, so 9 AM wins
+    // rather than leaking the current time onto a past day.
+    const now = dayStart + MS_PER_DAY + at(15) - dayStart;
+    expect(nextFreeSlot(dayStart, [], now)).toEqual({
+      startMs: at(9),
+      endMs: at(9, 30),
+    });
+  });
+
+  test("falls back to the last slot before midnight on a full day", () => {
+    const events = [timedEvent("all", 0, 0, 24, 0)];
+    const slot = nextFreeSlot(dayStart, events, beforeDay);
+    expect(slot).toEqual({ startMs: at(23, 30), endMs: at(24) });
+  });
+});
+
+describe("primary-zone event drafts", () => {
+  const paris = createZonedCalendarClock("Europe/Paris");
+
+  test("reports a shifted resolution for a Paris spring-forward create draft", () => {
+    expect(
+      newEventDefaults({
+        civilDate: parseCivilDate("2026-03-29"),
+        minute: 150,
+        clock: paris,
+      }),
+    ).toMatchObject({
+      resolution: "gap-shifted",
+      timeZone: "Europe/Paris",
+      requiresConfirmation: true,
+    });
+  });
+
+  test("keeps an explicit earlier or later fold distinct when dragging in Paris", () => {
+    const earlier = resolveDraggedWallTime({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      minute: 150,
+      fold: "earlier",
+    });
+    const later = resolveDraggedWallTime({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      minute: 150,
+      fold: "later",
+    });
+
+    expect(earlier.offsetMinutes).not.toBe(later.offsetMinutes);
+    expect(earlier.instantMs).not.toBe(later.instantMs);
+  });
+
+  test("requires a fold choice for a grid-created event in the repeated Paris hour", () => {
+    const draft = createGridEventDraft({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      startMinute: 150,
+      endMinute: 180,
+    });
+
+    expect(draft).toMatchObject({
+      requiresConfirmation: true,
+      startResolution: { kind: "ambiguous" },
+      endResolution: { kind: "exact" },
+    });
+    if (draft.startResolution.kind !== "ambiguous") {
+      throw new Error("Expected the repeated grid hour to remain ambiguous");
+    }
+    expect(draft.startResolution.earlierMs).not.toBe(
+      draft.startResolution.laterMs,
+    );
+  });
+
+  test("requires an end-fold choice when a grid draft starts before the repeated Paris hour", () => {
+    const draft = createGridEventDraft({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      startMinute: 105,
+      endMinute: 150,
+    });
+
+    expect(draft).toMatchObject({
+      requiresConfirmation: true,
+      startResolution: { kind: "exact" },
+      endResolution: { kind: "ambiguous" },
+    });
+    if (draft.endResolution.kind !== "ambiguous") {
+      throw new Error("Expected the repeated grid end hour to remain ambiguous");
+    }
+    expect(draft.endResolution.earlierMs).not.toBe(
+      draft.endResolution.laterMs,
+    );
+  });
+
+  test("uses the resized end edge fold rather than the start edge fold", () => {
+    const laterEnd = resolveResizeWallTime({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      minute: 150,
+      edgeFold: 1,
+    });
+    const earlierStart = resolveResizeWallTime({
+      clock: paris,
+      civilDate: parseCivilDate("2026-10-25"),
+      minute: 150,
+      edgeFold: 0,
+    });
+
+    expect(laterEnd.fold).toBe(1);
+    expect(earlierStart.fold).toBe(0);
+    expect(laterEnd.instantMs).not.toBe(earlierStart.instantMs);
+  });
+});
+
+describe("calendarDisplayName", () => {
+  test("prefers the user's override, then summary, then calendar id", () => {
+    expect(
+      calendarDisplayName({
+        googleCalendarId: "primary@example.com",
+        summary: "Primary",
+        summaryOverride: "My calendar",
+      }),
+    ).toBe("My calendar");
+    expect(
+      calendarDisplayName({
+        googleCalendarId: "team@example.com",
+        summary: "Team",
+      }),
+    ).toBe("Team");
+    expect(
+      calendarDisplayName({ googleCalendarId: "fallback@example.com" }),
+    ).toBe("fallback@example.com");
+  });
+});
+
+describe("formatWallClockMinutes", () => {
+  test("formats wall-clock bounds without a date or timezone", () => {
+    expect(formatWallClockMinutes(0)).toBe("12:00 AM");
+    expect(formatWallClockMinutes(9 * 60 + 15, false)).toBe("9:15");
+    expect(formatWallClockMinutes(13 * 60 + 5)).toBe("1:05 PM");
+    expect(formatWallClockMinutes(24 * 60)).toBe("12:00 AM");
+  });
+});
+
+describe("visibleMonthEventMetrics", () => {
+  test("uses all available rows when every event fits", () => {
+    expect(visibleMonthEventMetrics(5, 98)).toEqual({
+      visibleCount: 5,
+      hiddenCount: 0,
+    });
+  });
+
+  test("reserves the final available row for the overflow count", () => {
+    expect(visibleMonthEventMetrics(6, 98)).toEqual({
+      visibleCount: 4,
+      hiddenCount: 2,
+    });
+  });
+
+  test("shows only the overflow count when one row is available", () => {
+    expect(visibleMonthEventMetrics(3, 18)).toEqual({
+      visibleCount: 0,
+      hiddenCount: 3,
+    });
+  });
+
+  test("never returns a negative visible count for a constrained cell", () => {
+    expect(visibleMonthEventMetrics(3, 0)).toEqual({
+      visibleCount: 0,
+      hiddenCount: 3,
+    });
+  });
+});
+
+describe("layoutAllDayEvents", () => {
+  test("marks every member of an overlapping all-day span as conflicting", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("first", 0, 2),
+      allDayEvent("second", 1, 3),
+      allDayEvent("separate", 3, 4),
+    ]);
+
+    expect(
+      Object.fromEntries(
+        layout.map(({ event, isConflicting }) => [event._id, isConflicting]),
+      ),
+    ).toEqual({ first: true, second: true, separate: false });
+  });
+
+  test("does not treat the outer cards of an all-day overlap chain as conflicting peers", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("first", 0, 2),
+      allDayEvent("middle", 1, 3),
+      allDayEvent("last", 2, 4),
+    ]);
+
+    expect(
+      Object.fromEntries(
+        layout.map(({ event, conflictingEventIds }) => [
+          event._id,
+          conflictingEventIds,
+        ]),
+      ),
+    ).toEqual({
+      first: ["middle"],
+      middle: ["first", "last"],
+      last: ["middle"],
+    });
+  });
+
+  test("uses a stable 32px lane rhythm with 4px band padding", () => {
+    expect({
+      bandPadding: ALLDAY_BAND_PADDING,
+      eventHeight: ALLDAY_EVENT_HEIGHT,
+      laneStride: ALLDAY_EVENT_HEIGHT + ALLDAY_EVENT_GAP,
+    }).toEqual({ bandPadding: 4, eventHeight: 28, laneStride: 32 });
+  });
+
+  test("reuses a lane when event spans do not overlap", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("monday", 0, 1),
+      allDayEvent("tuesday", 1, 2),
+    ]);
+
+    expect(layout.map((event) => event.lane)).toEqual([0, 0]);
+  });
+
+  test("assigns concurrent events to separate lanes", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("first", 0, 1),
+      allDayEvent("second", 0, 1),
+      allDayEvent("third", 0, 1),
+    ]);
+
+    expect(layout.map((event) => event.lane)).toEqual([0, 1, 2]);
+    expect(visibleAllDayMetrics(layout, 0, 0)).toEqual({
+      laneCount: 3,
+      hiddenEventCount: 2,
+    });
+  });
+
+  test("reserves a lane across a multi-day event span", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("spanning", 0, 3),
+      allDayEvent("tuesday", 1, 2),
+      allDayEvent("wednesday", 2, 3),
+    ]);
+
+    expect(
+      Object.fromEntries(layout.map(({ event, lane }) => [event._id, lane])),
+    ).toEqual({ spanning: 0, tuesday: 1, wednesday: 1 });
+  });
+
+  test("counts overflow only within the visible day range", () => {
+    const layout = layoutAllDayEvents(days, [
+      allDayEvent("first", 3, 4),
+      allDayEvent("second", 3, 4),
+      allDayEvent("third", 3, 4),
+    ]);
+
+    expect(visibleAllDayMetrics(layout, 0, 1)).toEqual({
+      laneCount: 0,
+      hiddenEventCount: 0,
+    });
+    expect(visibleAllDayMetrics(layout, 3, 3)).toEqual({
+      laneCount: 3,
+      hiddenEventCount: 2,
+    });
+  });
+
+  test("packs lanes globally but clamps spans to the visible range", () => {
+    const events = [
+      allDayEvent("first", 0, 3), // [0,2]
+      allDayEvent("second", 0, 3), // [0,2]
+      allDayEvent("continuing", 1, 5), // [1,4]
+    ];
+    const byId = (visibleStartIdx: number, visibleEndIdx: number) =>
+      Object.fromEntries(
+        layoutAllDayEvents(days, events, visibleStartIdx, visibleEndIdx).map(
+          (entry) => [entry.event._id, entry],
+        ),
+      );
+
+    // Full window: lanes packed globally, spans untouched.
+    expect(byId(0, 4).continuing).toMatchObject({
+      lane: 2,
+      startIdx: 1,
+      endIdx: 4,
+    });
+
+    // Scrolled so `first`/`second` leave the window: `continuing` keeps its
+    // global lane 2 (rows never repack) but its span clamps to the visible
+    // range, so the card renders narrower.
+    const scrolled = byId(3, 4);
+    expect(scrolled.first).toBeUndefined();
+    expect(scrolled.second).toBeUndefined();
+    expect(scrolled.continuing).toMatchObject({
+      lane: 2,
+      startIdx: 3,
+      endIdx: 4,
+    });
+  });
+
+  test("orders lanes by true start, not input order", () => {
+    // `late` is declared first but starts a day later, so `early` still wins the
+    // top lane — the two never swap rows as the strip scrolls.
+    const laneById = Object.fromEntries(
+      layoutAllDayEvents(days, [
+        allDayEvent("late", 1, 5), // days 1–4
+        allDayEvent("early", 0, 2), // days 0–1, overlaps `late` on day 1
+      ]).map(({ event, lane }) => [event._id, lane]),
+    );
+
+    expect(laneById).toEqual({ early: 0, late: 1 });
+  });
+});
+
+describe("layoutDayEvents columns", () => {
+  test("derives timed conflict peers from direct interval overlap only", () => {
+    const layout = layoutDayEvents(
+      [
+        timedEvent("first", 9, 0, 10, 0),
+        timedEvent("middle", 9, 30, 10, 30),
+        timedEvent("last", 10, 0, 11, 0),
+      ],
+      dayStart,
+    );
+
+    expect(
+      Object.fromEntries(
+        layout.map(({ event, conflictingEventIds }) => [
+          event._id,
+          conflictingEventIds,
+        ]),
+      ),
+    ).toEqual({
+      first: ["middle"],
+      middle: ["first", "last"],
+      last: ["middle"],
+    });
+  });
+
+  test("does not mark touching timed intervals as conflicts", () => {
+    const layout = layoutDayEvents(
+      [timedEvent("first", 9, 0, 10, 0), timedEvent("second", 10, 0, 11, 0)],
+      dayStart,
+    );
+
+    expect(layout.map(({ isConflicting }) => isConflicting)).toEqual([
+      false,
+      false,
+    ]);
+  });
+
+  const byId = (layout: ReturnType<typeof layoutDayEvents>) =>
+    Object.fromEntries(layout.map((p) => [p.event._id, p]));
+
+  test("sequential events each stand alone in a single column", () => {
+    const layout = byId(
+      layoutDayEvents(
+        [timedEvent("a", 9, 0, 10, 0), timedEvent("b", 10, 0, 11, 0)],
+        dayStart,
+      ),
+    );
+
+    for (const id of ["a", "b"]) {
+      expect(layout[id].columnCount).toBe(1);
+      expect(layout[id].columnIndex).toBe(0);
+      expect(layout[id].columnSpan).toBe(1);
+    }
+  });
+
+  test("concurrent events split into adjacent columns", () => {
+    const layout = byId(
+      layoutDayEvents(
+        [timedEvent("a", 9, 0, 10, 0), timedEvent("b", 9, 0, 10, 0)],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.columnCount).toBe(2);
+    expect(layout.b.columnCount).toBe(2);
+    expect([layout.a.columnIndex, layout.b.columnIndex].sort()).toEqual([0, 1]);
+    expect(layout.a.columnSpan).toBe(1);
+    expect(layout.b.columnSpan).toBe(1);
+  });
+
+  test("a transitive overlap chain that is not all-concurrent reuses a lane", () => {
+    // a↔b overlap and b↔c overlap, but a and c do not: two columns suffice.
+    const layout = byId(
+      layoutDayEvents(
+        [
+          timedEvent("a", 9, 0, 10, 0),
+          timedEvent("b", 9, 30, 11, 0),
+          timedEvent("c", 10, 30, 12, 0),
+        ],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.columnCount).toBe(2);
+    expect(layout.a.columnIndex).toBe(0);
+    expect(layout.b.columnIndex).toBe(1);
+    expect(layout.c.columnIndex).toBe(0);
+  });
+
+  test("a card expands right across lanes left free by non-overlapping neighbours", () => {
+    // long anchors a 3-wide cluster (b,c concurrent at 9:00); d at 10:00 sits in
+    // b's freed lane and, with nothing overlapping it in lane 2, spans both.
+    const layout = byId(
+      layoutDayEvents(
+        [
+          timedEvent("long", 9, 0, 11, 0),
+          timedEvent("b", 9, 0, 9, 30),
+          timedEvent("c", 9, 0, 9, 30),
+          timedEvent("d", 10, 0, 10, 30),
+        ],
+        dayStart,
+      ),
+    );
+
+    expect(layout.d.columnCount).toBe(3);
+    expect(layout.d.columnIndex).toBe(1);
+    expect(layout.d.columnSpan).toBe(2);
+  });
+});
+
+describe("layoutDayEvents overlap style", () => {
+  const byId = (layout: ReturnType<typeof layoutDayEvents>) =>
+    Object.fromEntries(layout.map((p) => [String(p.event._id), p]));
+
+  test("a comfortable stagger keeps the overlapping fan", () => {
+    // Starts an hour apart: the later card sits well below the earlier one's
+    // header, so the prettier fan (advance < 1) is retained.
+    const layout = byId(
+      layoutDayEvents(
+        [timedEvent("a", 11, 15, 14, 0), timedEvent("b", 12, 15, 13, 30)],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.laneAdvance).toBeCloseTo(LANE_ADVANCE_RATIO, 5);
+    expect(layout.b.laneAdvance).toBeCloseTo(LANE_ADVANCE_RATIO, 5);
+  });
+
+  test("a close stagger tiles the cluster into clean columns", () => {
+    // Starts 15 minutes apart: the fan's later card would land on the earlier
+    // one's header, so both switch to full side-by-side tiling (advance 1).
+    const layout = byId(
+      layoutDayEvents(
+        [timedEvent("a", 11, 15, 14, 0), timedEvent("b", 11, 30, 12, 45)],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.laneAdvance).toBe(1);
+    expect(layout.b.laneAdvance).toBe(1);
+    // Tiled columns don't overlap: card b's left edge starts at card a's right.
+    const a = laneBox(layout.a.columnIndex, layout.a.columnCount, layout.a.columnSpan, layout.a.laneAdvance);
+    const b = laneBox(layout.b.columnIndex, layout.b.columnCount, layout.b.columnSpan, layout.b.laneAdvance);
+    expect(a.left + a.width).toBeCloseTo(b.left, 5);
+  });
+
+  test("a wider stagger threshold (week view) tiles a pair the default keeps fanned", () => {
+    // 40 minutes apart: above the 30-min day default (stays a fan) but within a
+    // 45-min week threshold (tiles). Same events, different threshold argument.
+    const events = [
+      timedEvent("a", 11, 0, 14, 0),
+      timedEvent("b", 11, 40, 13, 0),
+    ];
+
+    const dayLayout = byId(layoutDayEvents(events, dayStart));
+    expect(dayLayout.a.laneAdvance).toBeCloseTo(LANE_ADVANCE_RATIO, 5);
+
+    const weekLayout = byId(
+      layoutDayEvents(events, dayStart, WEEK_LANE_TILE_MAX_STAGGER_MS),
+    );
+    expect(weekLayout.a.laneAdvance).toBe(1);
+    expect(weekLayout.b.laneAdvance).toBe(1);
+  });
+
+  test("a whole cluster tiles when any overlapping pair starts too close", () => {
+    // a↔b are an hour apart (fan-friendly), but c starts right on top of b, so
+    // the entire transitively-linked cluster tiles for consistency.
+    const layout = byId(
+      layoutDayEvents(
+        [
+          timedEvent("a", 9, 0, 12, 0),
+          timedEvent("b", 10, 0, 12, 0),
+          timedEvent("c", 10, 10, 12, 0),
+        ],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.laneAdvance).toBe(1);
+    expect(layout.b.laneAdvance).toBe(1);
+    expect(layout.c.laneAdvance).toBe(1);
+  });
+
+  test("events that don't overlap in time never tile on a close start alone", () => {
+    // Back-to-back events (same start distance as a tiling case would use) don't
+    // overlap, so they aren't clustered and keep the default fan advance.
+    const layout = byId(
+      layoutDayEvents(
+        [timedEvent("a", 9, 0, 9, 30), timedEvent("b", 9, 30, 10, 0)],
+        dayStart,
+      ),
+    );
+
+    expect(layout.a.columnCount).toBe(1);
+    expect(layout.a.laneAdvance).toBeCloseTo(LANE_ADVANCE_RATIO, 5);
+    expect(layout.b.laneAdvance).toBeCloseTo(LANE_ADVANCE_RATIO, 5);
+  });
+});
+
+describe("laneBox", () => {
+  test("a lone card fills the whole column", () => {
+    expect(laneBox(0, 1, 1)).toEqual({ left: 0, width: 1 });
+  });
+
+  test("two lanes overlap rather than splitting into clean halves", () => {
+    const a = laneBox(0, 2, 1);
+    const b = laneBox(1, 2, 1);
+
+    // Each card is wider than half, so the pair overlaps in the middle.
+    expect(a.width).toBeGreaterThan(0.5);
+    expect(a.left).toBe(0);
+    // The second card starts before the midpoint and ends flush at the right.
+    expect(b.left).toBeLessThan(0.5);
+    expect(b.left + b.width).toBeCloseTo(1, 5);
+  });
+
+  test("advance 1 tiles lanes into clean, equal, non-overlapping halves", () => {
+    const a = laneBox(0, 2, 1, 1);
+    const b = laneBox(1, 2, 1, 1);
+
+    expect(a.left).toBe(0);
+    expect(a.width).toBeCloseTo(0.5, 5);
+    expect(b.left).toBeCloseTo(0.5, 5);
+    expect(b.left + b.width).toBeCloseTo(1, 5);
+  });
+
+  test("a spanning card extends to the column's right edge", () => {
+    const box = laneBox(0, 2, 2);
+    expect(box.left).toBe(0);
+    expect(box.width).toBeCloseTo(1, 5);
+  });
+});
+
+describe("calendar time-grid density", () => {
+  test("gives every 15-minute interval twenty physical pixels at minimum zoom", () => {
+    expect(MIN_DAY_HEIGHT).toBe(1_920);
+    expect(MIN_DAY_HEIGHT / (24 * 4)).toBe(20);
+  });
+});
+
+describe("eventHorizontalBox", () => {
+  test("a lone event keeps a small breathing margin inside its day column", () => {
+    const [positioned] = layoutDayEvents(
+      [timedEvent("only", 9, 0, 10, 0)],
+      dayStart,
+    );
+
+    expect(eventHorizontalBox(positioned!, false)).toEqual({
+      leftPct: 0,
+      widthPct: 100,
+      insetStartPx: 5,
+      insetEndPx: 5,
+    });
+  });
+
+  test("tiled overlaps keep outer breathing room and a narrow shared gap", () => {
+    const positioned = layoutDayEvents(
+      [timedEvent("a", 9, 0, 10, 0), timedEvent("b", 9, 0, 10, 0)],
+      dayStart,
+    );
+
+    expect(eventHorizontalBox(positioned[0]!, false)).toEqual({
+      leftPct: 0,
+      widthPct: 50,
+      insetStartPx: 5,
+      insetEndPx: 1,
+    });
+    expect(eventHorizontalBox(positioned[1]!, false)).toEqual({
+      leftPct: 50,
+      widthPct: 50,
+      insetStartPx: 1,
+      insetEndPx: 5,
+    });
+  });
+});
+
+describe("strip geometry", () => {
+  test("side buffer stays derived from the per-view page buffer", () => {
+    expect(STRIP_SIDE_DAYS.week).toBe(VIEW_BUFFER.week * VIEW_COLUMNS.week);
+    expect(STRIP_SIDE_DAYS.day).toBe(VIEW_BUFFER.day * VIEW_COLUMNS.day);
+  });
+
+  test("stripDays returns the same Date object for the same day", () => {
+    const a = stripDays(new Date(2026, 0, 5), 7, 3);
+    const b = stripDays(new Date(2026, 0, 6), 7, 3);
+    // Overlapping columns must be referentially equal or the memoized day
+    // columns all re-render on every anchor step.
+    const shared = a.filter((day) => b.includes(day));
+    expect(shared.length).toBeGreaterThan(0);
+  });
+});
+
+describe("eventQueryRange", () => {
+  /** The rendered span for an anchor, as [startMs, endMs). */
+  function renderedRange(view: "day" | "week" | "month", anchor: Date) {
+    if (view === "month") {
+      const buffer = VIEW_BUFFER.month;
+      const first = pageDays("month", addPages("month", anchor, -buffer));
+      const last = pageDays("month", addPages("month", anchor, buffer));
+      return {
+        startMs: first[0].getTime(),
+        endMs: last[last.length - 1].getTime() + MS_PER_DAY,
+      };
+    }
+    const columns = VIEW_COLUMNS[view];
+    const days = stripDays(anchor, columns, STRIP_SIDE_DAYS[view]);
+    return {
+      startMs: days[0].getTime(),
+      endMs: days[days.length - 1].getTime() + MS_PER_DAY,
+    };
+  }
+
+  // The window is quantized, so it only changes when the anchor crosses a
+  // period boundary. Until it does, the retained previous result is all the
+  // grid has — if it doesn't span the strip being rendered, those columns show
+  // no events. A settle can move the anchor by at most the buffer, so the
+  // window for any anchor must cover every strip reachable in one settle.
+  for (const view of ["day", "week"] as const) {
+    test(`${view} window covers every strip reachable in one settle`, () => {
+      const maxDelta = STRIP_SIDE_DAYS[view];
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const anchor = new Date(2026, 0, 5 + dayOffset);
+        const window = eventQueryRange(view, anchor);
+        for (let delta = -maxDelta; delta <= maxDelta; delta++) {
+          const next = new Date(2026, 0, 5 + dayOffset + delta);
+          const rendered = renderedRange(view, next);
+          expect(window.startMs).toBeLessThanOrEqual(rendered.startMs);
+          expect(window.endMs).toBeGreaterThanOrEqual(rendered.endMs);
+        }
+      }
+    });
+  }
+
+  test("month window covers every page reachable in one settle", () => {
+    const maxDelta = VIEW_BUFFER.month;
+    for (let monthOffset = 0; monthOffset < 12; monthOffset++) {
+      const anchor = pageStart("month", new Date(2026, monthOffset, 1));
+      const window = eventQueryRange("month", anchor);
+      for (let delta = -maxDelta; delta <= maxDelta; delta++) {
+        const rendered = renderedRange("month", addPages("month", anchor, delta));
+        expect(window.startMs).toBeLessThanOrEqual(rendered.startMs);
+        expect(window.endMs).toBeGreaterThanOrEqual(rendered.endMs);
+      }
+    }
+  });
+
+  test("window is stable while the anchor stays inside its period", () => {
+    const monday = pageStart("week", new Date(2026, 0, 7));
+    const base = eventQueryRange("week", monday);
+    for (let i = 1; i < 7; i++) {
+      const sameWeek = new Date(monday.getTime() + i * MS_PER_DAY);
+      expect(eventQueryRange("week", sameWeek)).toEqual(base);
+    }
+  });
+});

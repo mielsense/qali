@@ -1,0 +1,71 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Generated files
+apps/web/src/routeTree.gen.ts
+index.js
+
+# Local design and implementation workbooks (not product documentation)
+plans/
+docs/superpowers/
+
+# Environment variables (examples remain reviewable)
+.env*
+!.env.example
+!*.env.example
+
+# IDEs and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+.agents/
+.claude/
+**/.agents/
+**/.claude/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Turbo
+.turbo
+.nx
+
+# Better-T-Stack
+.alchemy
+.vercel
+
+# Testing
+coverage
+.nyc_output
+test-results
+
+# Misc
+*.tgz
+.cache
+tmp
+temp
+
+# Verified desktop release artifacts (re-created from the committed manifest)
+apps/desktop/resources/bin/convex-local-backend
+apps/desktop/resources/bin/convex-generate-key
+apps/desktop/resources/convex-cli/

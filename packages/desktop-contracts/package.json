@@ -1,0 +1,21 @@
+{
+  "name": "@qali/desktop-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas.ts"
+  },
+  "scripts": {
+    "test": "bun test src",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@qali/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

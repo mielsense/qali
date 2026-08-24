@@ -1,0 +1,45 @@
+{
+  "formatVersion": 1,
+  "target": "aarch64-apple-darwin",
+  "convex": {
+    "clientVersion": "1.42.1",
+    "cli": {
+      "version": "1.42.1",
+      "path": "convex-cli/cli.bundle.cjs",
+      "sha256": "c1deaff4ce9fca4fbc3c84193543a159604d651f3c1929623ed096ffd7425c64",
+      "bytes": 5718263
+    },
+    "backend": {
+      "release": "precompiled-2026-07-25-f4a0132",
+      "commit": "f4a0132c073eb7c8545dc90ff48abb47f8d7ba73",
+      "asset": "convex-local-backend-aarch64-apple-darwin.zip",
+      "sourceUrl": "https://github.com/get-convex/convex-backend/releases/download/precompiled-2026-07-25-f4a0132/convex-local-backend-aarch64-apple-darwin.zip",
+      "archiveSha256": "44d7ca2cd5e291200f13213df9a44739f56b8083acd47ee4e4e558697e5e95a7",
+      "path": "bin/convex-local-backend",
+      "sha256": "59f7b6d327a4d2080b11b0d20d6a47ec9a8769cf0428a72d129cc46d9d64de77",
+      "bytes": 166687824,
+      "serverVersion": "unknown"
+    },
+    "keygen": {
+      "sourceUrl": "https://github.com/get-convex/convex-backend/archive/f4a0132c073eb7c8545dc90ff48abb47f8d7ba73.tar.gz",
+      "sourceCommit": "f4a0132c073eb7c8545dc90ff48abb47f8d7ba73",
+      "sourceArchiveSha256": "766e745254180899f0f4bb104c82703454e1f19d1dcb2966ce4c6282154eb2c9",
+      "sourcePath": "crates/keybroker/src/bin/generate_key.rs",
+      "compiler": "rustc 1.98.0-nightly (13f1859f2 2026-06-27)",
+      "protocol": "stdin-json-v1",
+      "maxRequestBytes": 4096,
+      "wrapperPath": "apps/desktop/native/convex-keygen/generate_key.rs",
+      "wrapperSha256": "044a62217b2558a8fe32b52ed5cead6cf8072aa90633dd06e636a5ab726c0786",
+      "path": "bin/convex-generate-key",
+      "sha256": "48390546579f5ff1274d3c8f513c5a50b76e8f6ab96935c1cbb312cf485f70f2",
+      "bytes": 1483616,
+      "testVectors": [
+        {
+          "instanceName": "qali-test",
+          "instanceSecret": "0000000000000000000000000000000000000000000000000000000000000000",
+          "outputPattern": "^qali-test\\|01[a-f0-9]{72}$"
+        }
+      ]
+    }
+  }
+}

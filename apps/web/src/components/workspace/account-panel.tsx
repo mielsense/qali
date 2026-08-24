@@ -1,0 +1,125 @@
+import {
+  Cancel01Icon,
+  ComputerSettingsIcon,
+  Logout01Icon,
+  Moon01Icon,
+  Sun01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@qali/ui/components/button";
+import { Spinner } from "@qali/ui/components/spinner";
+import { useState } from "react";
+
+import { useTheme } from "@/components/theme-provider";
+import { authClient } from "@/lib/auth-client";
+import { useDesktopStatus, useQaliUser } from "@/lib/desktop/status";
+import { notify } from "@/lib/notices";
+import { UserAvatar } from "./user-avatar";
+
+const themeOptions = [
+  { label: "Dark", value: "dark", icon: Moon01Icon },
+  { label: "Light", value: "light", icon: Sun01Icon },
+  { label: "Device", value: "system", icon: ComputerSettingsIcon },
+] as const;
+
+export function AccountPanel({ onClose }: { onClose: () => void }) {
+  const desktop = useDesktopStatus();
+  const user = useQaliUser();
+  const { theme, setTheme } = useTheme();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const signOut = async () => {
+    if (desktop || isSigningOut) return;
+    setIsSigningOut(true);
+
+    try {
+      const { error } = await authClient.signOut();
+      if (!error) return;
+
+      setIsSigningOut(false);
+      notify({ kind: "account-action-failed", action: "sign-out" });
+    } catch {
+      setIsSigningOut(false);
+      notify({
+        kind: "account-action-failed",
+        action: "sign-out",
+      });
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2.5">
+        <UserAvatar className="size-9" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">
+            {desktop ? "Qali" : user?.name ?? user?.email ?? "Account"}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {desktop ? "Local workspace" : user?.email}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <HugeiconsIcon
+            icon={Cancel01Icon}
+            strokeWidth={2}
+            className="size-4"
+          />
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        <p className="px-2 text-xs font-medium text-muted-foreground">Theme</p>
+        <div
+          role="group"
+          aria-label="Theme"
+          className="grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1"
+        >
+          {themeOptions.map((option) => (
+            <Button
+              key={option.value}
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={theme === option.value}
+              className="rounded-xl px-2 text-muted-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm hover:bg-background/60 dark:hover:bg-background/40 aria-pressed:dark:border-white/5"
+              onClick={() => setTheme(option.value)}
+            >
+              <HugeiconsIcon
+                icon={option.icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {!desktop ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="justify-start"
+          disabled={isSigningOut}
+          aria-busy={isSigningOut}
+          onClick={signOut}
+        >
+          {isSigningOut ? (
+            <Spinner />
+          ) : (
+            <HugeiconsIcon
+              icon={Logout01Icon}
+              strokeWidth={2}
+              className="size-4"
+            />
+          )}
+          {isSigningOut ? "Signing out…" : "Sign out"}
+        </Button>
+      ) : null}
+    </div>
+  );
+}

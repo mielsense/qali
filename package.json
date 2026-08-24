@@ -1,0 +1,70 @@
+{
+  "name": "qali",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.4.2",
+      "zod": "^4.4.3",
+      "typescript": "^6",
+      "next-themes": "^0.4.6",
+      "react": "^19.2.7",
+      "react-dom": "^19.2.7",
+      "sileo": "^0.1.5",
+      "convex": "^1.42.1",
+      "better-auth": "1.6.15",
+      "@convex-dev/better-auth": "^0.12.5",
+      "@types/react": "^19.2.17",
+      "@types/react-dom": "^19.2.3",
+      "tailwindcss": "^4.3.2"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "verify": "bun run check-types && bun run test && bun run build",
+    "dev:web": "turbo run dev -F web",
+    "dev:www": "turbo run dev -F www",
+    "dev:server": "turbo run dev -F @qali/backend",
+    "dev:setup": "turbo run dev:setup -F @qali/backend",
+    "desktop:build-keychain-helper": "bash scripts/desktop/build-keychain-helper.sh",
+    "desktop:fetch-convex-artifacts": "bun scripts/desktop/fetch-convex-artifacts.ts",
+    "desktop:build-convex-keygen": "bash scripts/desktop/build-convex-keygen.sh",
+    "desktop:verify-release-manifest": "bun scripts/desktop/verify-release-manifest.ts",
+    "desktop:generate-release-input-allowlist": "bun scripts/desktop/generate-release-input-allowlist.ts",
+    "desktop:generate-output-policy": "bun scripts/desktop/generate-packaged-output-policy.ts",
+    "desktop:generate-output-policy:local": "bun scripts/desktop/generate-packaged-output-policy.ts --local-development",
+    "desktop:probe-release-inputs": "bun scripts/desktop/probe-release-inputs.ts",
+    "desktop:package": "bun scripts/desktop/build-app.ts",
+    "desktop:package:local": "bun scripts/desktop/build-app.ts --local-development",
+    "desktop:release:mac": "bun scripts/desktop/release-macos.ts",
+    "desktop:verify-app": "bun scripts/desktop/verify-app.ts",
+    "desktop:verify-app:local": "bun scripts/desktop/verify-app.ts --local-development",
+    "desktop:probe-app-verifier": "bun scripts/desktop/probe-app-verifier.ts",
+    "desktop:probe-output-policy": "bun scripts/desktop/probe-output-policy.ts",
+    "desktop:smoke-packaged": "bun scripts/desktop/smoke-packaged.ts",
+    "desktop:smoke-packaged:local": "bun scripts/desktop/smoke-packaged.ts --local-development",
+    "build:cloudflare": "bun run build --filter=web && bun run --cwd packages/backend deploy:prod",
+    "build:cloudflare:www": "bun run build --filter=www"
+  },
+  "dependencies": {
+    "@qali/desktop-contracts": "workspace:*",
+    "@qali/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@electron/asar": "3.4.1",
+    "@qali/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "turbo": "^2.10.2",
+    "typescript": "catalog:"
+  },
+  "packageManager": "bun@1.3.14"
+}

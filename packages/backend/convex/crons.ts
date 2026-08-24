@@ -1,0 +1,38 @@
+import { cronJobs } from "convex/server";
+
+import { internal } from "./_generated/api";
+
+const crons = cronJobs();
+
+// Slow re-rank so recency decay + upcoming→past transitions settle on calendars
+// that see no event changes. Event-driven recompute in runSyncForUser covers the
+// common case; this is the idle-calendar safety net.
+// Cap the events table: delete events older than the sync horizon (365 days) so
+// past events don't accumulate without bound. Daily is ample for a slow horizon.
+crons.interval(
+  "prune aged-out events",
+  { hours: 24 },
+  internal.maintenance.enqueueEventPrune,
+  {},
+);
+
+// Same 180-day cap for the shared public-calendar events (holidays/birthdays).
+crons.interval(
+  "prune aged-out shared events",
+  { hours: 24 },
+  internal.maintenance.enqueueSharedEventPrune,
+  {},
+);
+
+// Drop public-request rate-limit rows whose window elapsed long ago.
+crons.interval(
+  "prune stale rate limits",
+  { hours: 24 },
+  internal.maintenance.pruneRateLimits,
+  {},
+);
+
+// Cap the assistant tables: delete conversations untouched for 30 days. The
+// user-driven "new chat discards the prior" path handles the common case; this
+// catches threads left behind rather than replaced.
+export default crons;

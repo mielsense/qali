@@ -1,0 +1,1096 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "sileo/styles.css";
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@font-face {
+  font-family: "Geist Pixel Square";
+  src: url("../assets/fonts/geist/GeistPixel-Square.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* Goo panels expose their live palette to nested semantic components. Typed
+ * custom properties let those nested surfaces interpolate with the panel shell
+ * instead of snapping when the dropdown enters its active palette. */
+@property --goo-fill {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --goo-foreground {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --goo-hover-fill {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root {
+  --qali-accent: #b24b3d;
+  --qali-accent-hover: color-mix(in oklch, var(--qali-accent) 90%, white);
+  --qali-accent-active: color-mix(in oklch, var(--qali-accent) 88%, black);
+  --qali-accent-border: color-mix(in oklch, var(--qali-accent) 76%, black);
+  --qali-accent-focus: color-mix(in oklch, var(--qali-accent) 68%, transparent);
+  --qali-surface-raised-opaque: oklch(98% 0 0);
+  /* OA depth model. Every reusable surface chooses one of these roles; pages
+   * do not invent their own backgrounds or shadow stacks. */
+  --qali-surface-canvas: oklch(99% 0 0);
+  --qali-surface-flat: oklch(97.8% 0 0);
+  --qali-surface-raised: oklch(99.4% 0 0);
+  --qali-surface-floating: oklch(98.8% 0 0);
+  --qali-surface-inset: oklch(95.8% 0 0);
+  --qali-edge-subtle: oklch(13% 0 0 / 0.065);
+  --qali-edge-strong: oklch(13% 0 0 / 0.11);
+  --qali-goo-fill: var(--popover);
+  --qali-goo-control-fill: color-mix(
+    in oklch,
+    var(--foreground) 4%,
+    var(--qali-goo-fill)
+  );
+  --qali-glass-opacity: 80%;
+  --qali-glass-raised-surface: var(--card);
+  --qali-glass-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  --qali-glass-grain-size: 128px 128px;
+  --qali-glass-surface: color-mix(in srgb, var(--background) 74%, transparent);
+  --qali-glass-panel-surface: color-mix(
+    in srgb,
+    var(--qali-glass-raised-surface) var(--qali-glass-opacity),
+    transparent
+  );
+  --qali-glass-control-surface: color-mix(
+    in srgb,
+    var(--popover) 48%,
+    transparent
+  );
+  --qali-glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
+  --qali-glass-edge-firm: color-mix(
+    in oklch,
+    var(--foreground) 16%,
+    transparent
+  );
+  --qali-edge-highlight: color-mix(in oklch, white 72%, transparent);
+  --qali-control-edge: color-mix(in oklch, var(--foreground) 9%, transparent);
+  --qali-glass-blur: 12px;
+  --qali-glass-saturation: 1.14;
+  --qali-motion-feedback: 100ms;
+  --qali-motion-enter: 160ms;
+  --qali-motion-exit: 110ms;
+  --qali-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --qali-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --qali-shadow-attached:
+    inset 1px 1px 0 var(--qali-edge-highlight), 0 1px 2px oklch(0 0 0 / 0.08),
+    0 0 0 1px var(--qali-control-edge);
+  --qali-shadow-popover:
+    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 6px oklch(0 0 0 / 0.07),
+    0 12px 28px oklch(0 0 0 / 0.12), 0 0 0 1px var(--qali-glass-edge);
+  --qali-shadow-control:
+    inset 0 1px 0 rgb(255 255 255 / 0.72), 0 1px 2px rgb(0 0 0 / 0.08),
+    0 0 0 1px var(--qali-edge-subtle);
+  --qali-shadow-float:
+    inset 0 1px 0 rgb(255 255 255 / 0.64), 0 2px 5px rgb(0 0 0 / 0.08),
+    0 18px 42px rgb(0 0 0 / 0.12), 0 0 0 1px var(--qali-edge-subtle);
+  --qali-goo-shadow: drop-shadow(0 2px 3px oklch(0 0 0 / 0.1))
+    drop-shadow(0 12px 24px oklch(0 0 0 / 0.12));
+  --background: oklch(99% 0 0);
+  --foreground: oklch(13% 0 0);
+  --card: oklch(97% 0 0);
+  --card-foreground: oklch(13% 0 0);
+  --popover: oklch(97% 0 0);
+  --popover-foreground: oklch(13% 0 0);
+  --primary: oklch(13% 0 0);
+  --primary-foreground: oklch(99% 0 0);
+  --secondary: oklch(97% 0 0);
+  --secondary-foreground: oklch(13% 0 0);
+  --muted: oklch(97% 0 0);
+  --muted-foreground: oklch(47% 0 0);
+  --accent: oklch(94% 0 0);
+  --accent-foreground: oklch(13% 0 0);
+  --calendar-header: oklch(98.2% 0 0);
+  --destructive: oklch(62% 0.22 25);
+  --border: oklch(13% 0 0 / 0.06);
+  --input: oklch(13% 0 0 / 0.06);
+  --ring: oklch(13% 0 0 / 0.12);
+  /* Link accent — the one hue in an otherwise monochrome palette, so links read
+   * as distinct from plain underlined text. */
+  --link: oklch(0.52 0.17 255);
+  --chart-1: var(--qali-accent);
+  --chart-2: oklch(0.46 0 0);
+  --chart-3: oklch(0.66 0 0);
+  --chart-4: oklch(0.78 0 0);
+  --chart-5: oklch(0.88 0 0);
+  /* Calendar event palette — Google's per-event/per-calendar colors are snapped
+   * onto these hues so the grid stays tonally consistent. See
+   * apps/web/src/components/calendar/colors.ts. */
+  --event-neutral: oklch(0.68 0.02 250);
+  --event-1: oklch(0.72 0.15 20);
+  --event-2: oklch(0.74 0.15 50);
+  --event-3: oklch(0.8 0.13 90);
+  --event-4: oklch(0.75 0.15 150);
+  --event-5: oklch(0.76 0.12 195);
+  --event-6: oklch(0.72 0.14 240);
+  --event-7: oklch(0.7 0.15 285);
+  --event-8: oklch(0.7 0.16 325);
+  /* Chroma band — the saturated hues that sweep across text on reveal (the
+   * marketing hero title and the assistant panel's streaming chunks). Kept as
+   * tokens so the gradient reads from one source of truth and can be retuned in
+   * one place. */
+  --chroma-1: #c679c4;
+  --chroma-2: #fa3d1d;
+  --chroma-3: #ffb005;
+  --chroma-4: #e1e1fe;
+  --chroma-5: #0358f7;
+  --radius: 0.625rem;
+  --sidebar: oklch(97% 0 0);
+  --sidebar-foreground: oklch(13% 0 0);
+  --sidebar-primary: oklch(13% 0 0);
+  --sidebar-primary-foreground: oklch(99% 0 0);
+  --sidebar-accent: oklch(94% 0 0);
+  --sidebar-accent-foreground: oklch(13% 0 0);
+  --sidebar-border: oklch(13% 0 0 / 0.06);
+  --sidebar-ring: oklch(13% 0 0 / 0.12);
+}
+
+.dark {
+  --qali-surface-raised-opaque: #202020;
+  --qali-surface-canvas: #111111;
+  --qali-surface-flat: #161616;
+  --qali-surface-raised: #1d1d1d;
+  --qali-surface-floating: #202020;
+  --qali-surface-inset: #0d0d0d;
+  --qali-edge-subtle: rgb(255 255 255 / 0.055);
+  --qali-edge-strong: rgb(255 255 255 / 0.1);
+  --qali-goo-fill: #202020;
+  --qali-goo-control-fill: #292929;
+  --qali-glass-raised-surface: #2c2c2c;
+  --qali-glass-surface: color-mix(in srgb, #202020 68%, transparent);
+  --qali-glass-panel-surface: color-mix(
+    in srgb,
+    var(--qali-glass-raised-surface) var(--qali-glass-opacity),
+    transparent
+  );
+  --qali-glass-control-surface: color-mix(in srgb, #2c2c2c 72%, transparent);
+  --qali-glass-edge: rgb(255 255 255 / 0.07);
+  --qali-glass-edge-firm: rgb(255 255 255 / 0.12);
+  --qali-edge-highlight: rgb(255 255 255 / 0.06);
+  --qali-control-edge: rgb(255 255 255 / 0.07);
+  --qali-glass-blur: 16px;
+  --qali-glass-saturation: 1.08;
+  --qali-shadow-attached:
+    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 4px oklch(0 0 0 / 0.38),
+    0 0 0 1px var(--qali-control-edge);
+  --qali-shadow-popover:
+    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 8px oklch(0 0 0 / 0.34),
+    0 16px 34px oklch(0 0 0 / 0.48), 0 0 0 1px var(--qali-glass-edge);
+  --qali-shadow-control:
+    inset 0 1px 0 rgb(255 255 255 / 0.085), 0 2px 4px rgb(0 0 0 / 0.42),
+    0 0 0 1px var(--qali-edge-subtle);
+  --qali-shadow-float:
+    inset 0 1px 0 rgb(255 255 255 / 0.08), 0 3px 8px rgb(0 0 0 / 0.38),
+    0 20px 48px rgb(0 0 0 / 0.5), 0 0 0 1px var(--qali-edge-subtle);
+  --qali-goo-shadow: drop-shadow(0 2px 4px oklch(0 0 0 / 0.4))
+    drop-shadow(0 16px 30px oklch(0 0 0 / 0.46));
+  --background: #111111;
+  --foreground: oklch(96% 0 0);
+  --card: #1b1b1b;
+  --card-foreground: oklch(96% 0 0);
+  --popover: #1b1b1b;
+  --popover-foreground: oklch(96% 0 0);
+  --primary: oklch(96% 0 0);
+  --primary-foreground: #111111;
+  --secondary: #1b1b1b;
+  --secondary-foreground: oklch(96% 0 0);
+  --muted: #1b1b1b;
+  --muted-foreground: oklch(62% 0 0);
+  --accent: oklch(28% 0 0);
+  --accent-foreground: oklch(96% 0 0);
+  --calendar-header: #0e0e0e;
+  --destructive: oklch(62% 0.22 25);
+  --border: rgb(255 255 255 / 0.05);
+  --input: rgb(255 255 255 / 0.05);
+  --ring: rgb(255 255 255 / 0.1);
+  --link: oklch(0.72 0.15 255);
+  --chart-1: color-mix(in oklch, var(--qali-accent) 84%, white);
+  --chart-2: oklch(0.76 0 0);
+  --chart-3: oklch(0.6 0 0);
+  --chart-4: oklch(0.44 0 0);
+  --chart-5: oklch(0.3 0 0);
+  --event-neutral: oklch(0.68 0.02 250);
+  --event-1: oklch(0.72 0.15 20);
+  --event-2: oklch(0.74 0.15 50);
+  --event-3: oklch(0.8 0.13 90);
+  --event-4: oklch(0.75 0.15 150);
+  --event-5: oklch(0.76 0.12 195);
+  --event-6: oklch(0.72 0.14 240);
+  --event-7: oklch(0.7 0.15 285);
+  --event-8: oklch(0.7 0.16 325);
+  --sidebar: #1b1b1b;
+  --sidebar-foreground: oklch(96% 0 0);
+  --sidebar-primary: oklch(96% 0 0);
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: oklch(28% 0 0);
+  --sidebar-accent-foreground: oklch(96% 0 0);
+  --sidebar-border: rgb(255 255 255 / 0.05);
+  --sidebar-ring: rgb(255 255 255 / 0.1);
+}
+
+/* The installed desktop has a native NSVisualEffectView supplied by Electron.
+ * These fills deliberately reveal that material; hosted web keeps the denser
+ * fallback above because there is no operating-system layer underneath it. */
+html[data-qali-desktop].light {
+  --qali-glass-surface: rgb(248 248 248 / 0.54);
+  --qali-glass-panel-surface: rgb(255 255 255 / 0.64);
+  --qali-glass-control-surface: rgb(255 255 255 / 0.48);
+  --qali-glass-blur: 24px;
+  --qali-glass-saturation: 1.28;
+}
+
+html[data-qali-desktop].dark {
+  --qali-glass-surface: rgb(24 24 24 / 0.46);
+  --qali-glass-panel-surface: rgb(34 34 34 / 0.56);
+  --qali-glass-control-surface: rgb(54 54 54 / 0.42);
+  --qali-glass-blur: 24px;
+  --qali-glass-saturation: 1.22;
+}
+
+@theme inline {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+    sans-serif;
+  --font-display:
+    "Geist Pixel Square", "Geist Mono", ui-monospace, "SFMono-Regular", Menlo,
+    Monaco, Consolas, monospace;
+  --font-display--font-weight: 500;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-qali-accent: var(--qali-accent);
+  --color-link: var(--link);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-calendar-header: var(--calendar-header);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --font-heading: var(--font-sans);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply font-sans bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html[data-qali-desktop],
+  html[data-qali-desktop] body,
+  html[data-qali-desktop] #app {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .qali-surface {
+    border: 1px solid var(--qali-edge-subtle);
+    color: var(--foreground);
+  }
+  .qali-surface--flat {
+    background: var(--qali-surface-flat);
+  }
+  .qali-surface--raised {
+    background: var(--qali-surface-raised);
+    box-shadow: var(--qali-shadow-control);
+  }
+  .qali-surface--floating {
+    background: var(--qali-surface-floating);
+    box-shadow: var(--qali-shadow-float);
+  }
+  .qali-surface--inset {
+    background: var(--qali-surface-inset);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+  .qali-control--quiet {
+    border-color: var(--qali-edge-subtle);
+    background: var(--qali-surface-flat);
+  }
+  .qali-control--raised,
+  .qali-segmented {
+    border-color: var(--qali-edge-subtle);
+    background: var(--qali-surface-raised);
+    box-shadow: var(--qali-shadow-control);
+  }
+  .qali-card--metric {
+    background: var(--qali-surface-flat);
+  }
+  .qali-control {
+    transition:
+      color var(--qali-motion-feedback) ease,
+      background-color var(--qali-motion-feedback) ease,
+      border-color var(--qali-motion-feedback) ease,
+      box-shadow var(--qali-motion-feedback) ease,
+      transform var(--qali-motion-feedback) var(--qali-ease-out),
+      opacity var(--qali-motion-feedback) ease;
+  }
+  .qali-control--accent,
+  .qali-elevation-attached {
+    box-shadow: var(--qali-shadow-attached);
+  }
+  .qali-control:focus-visible,
+  .qali-floating-control:focus-visible {
+    outline: 2px solid var(--qali-accent-focus);
+    outline-offset: 2px;
+  }
+  .qali-elevation-popover {
+    box-shadow: var(--qali-shadow-popover);
+  }
+  .qali-goo-surface {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid var(--border);
+    background: var(--qali-goo-fill);
+    box-shadow: var(--qali-shadow-attached);
+  }
+  .qali-glass {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid var(--qali-glass-edge);
+    background: var(--qali-glass-surface);
+    box-shadow: var(--qali-shadow-attached);
+    backdrop-filter: blur(var(--qali-glass-blur))
+      saturate(var(--qali-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--qali-glass-blur))
+      saturate(var(--qali-glass-saturation));
+  }
+  .qali-glass::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background-image:
+      var(--qali-glass-grain),
+      linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 38%),
+      linear-gradient(90deg, rgb(255 255 255 / 0.018), transparent 30%);
+    background-size:
+      var(--qali-glass-grain-size),
+      100% 100%,
+      100% 100%;
+    background-blend-mode: soft-light, normal, normal;
+    content: "";
+    pointer-events: none;
+  }
+  .qali-glass::after {
+    position: absolute;
+    inset: -1px;
+    z-index: 2;
+    border: 1px solid var(--qali-glass-edge);
+    border-radius: inherit;
+    box-shadow: inset 0 1px 0 var(--qali-edge-highlight);
+    content: "";
+    pointer-events: none;
+  }
+  .qali-glass--dock,
+  .qali-glass--panel {
+    border-radius: 14px;
+    background: var(--qali-glass-panel-surface);
+  }
+  .qali-glass--menu,
+  .qali-glass--toast {
+    border-radius: 10px;
+  }
+  .qali-glass--tooltip {
+    border-radius: 6px;
+  }
+  .qali-tooltip-arrow {
+    background: var(--qali-glass-surface);
+    fill: var(--qali-glass-surface);
+  }
+  .qali-glass--composer {
+    border-radius: 20px;
+    background: var(--qali-glass-panel-surface);
+  }
+  .qali-glass--shell {
+    border-radius: 22px;
+  }
+  .qali-shell-linework {
+    --qali-shell-header: 56px;
+    --qali-shell-rail: 84px;
+  }
+  .qali-shell-linework::before,
+  .qali-shell-linework::after {
+    position: absolute;
+    background: var(--border);
+    content: "";
+  }
+  .qali-shell-linework::before {
+    top: calc(var(--qali-shell-header) - 1px);
+    right: 0;
+    left: var(--qali-shell-rail);
+    height: 1px;
+  }
+  .qali-shell-linework::after {
+    top: 0;
+    bottom: 0;
+    left: calc(var(--qali-shell-rail) - 1px);
+    width: 1px;
+  }
+  .qali-settings-layout {
+    background: transparent;
+  }
+  .qali-settings-sidebar {
+    background: transparent;
+  }
+  .qali-glass--menu,
+  .qali-glass--tooltip,
+  .qali-glass--toast,
+  .qali-elevation-popover {
+    box-shadow: var(--qali-shadow-popover);
+  }
+  .qali-floating-control {
+    border-radius: 9999px;
+  }
+  .qali-floating-layer {
+    transform-origin: var(--transform-origin);
+    transition:
+      opacity var(--qali-motion-exit) var(--qali-ease-exit),
+      transform var(--qali-motion-exit) var(--qali-ease-exit);
+  }
+  .qali-floating-layer[data-open],
+  .qali-floating-layer[data-state="delayed-open"] {
+    opacity: 1;
+    transform: scale(1);
+    transition-duration: var(--qali-motion-enter);
+    transition-timing-function: var(--qali-ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+  .qali-floating-layer[data-closed] {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  .qali-goo-glass {
+    border: 1px solid var(--border);
+    background-color: var(--qali-goo-fill);
+    box-shadow: var(--qali-shadow-attached);
+  }
+  .qali-goo-backdrop {
+    box-shadow: inset 0 1px 0 var(--qali-edge-highlight);
+  }
+  .qali-goo-elevation.qali-elevation-popover {
+    box-shadow: none;
+  }
+  .shadow-bevel {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.08),
+      inset 0 1px 0 oklch(1 0 0 / 0.5),
+      0 0 0 1px oklch(0 0 0 / 0.035);
+  }
+  .shadow-card {
+    box-shadow:
+      0 2px 5px oklch(0 0 0 / 0.08),
+      0 12px 30px oklch(0 0 0 / 0.055),
+      inset 0 1px 0 oklch(1 0 0 / 0.5),
+      0 0 0 1px oklch(0 0 0 / 0.055);
+  }
+  .shadow-popover {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.08),
+      0 14px 36px oklch(0 0 0 / 0.11),
+      inset 0 1px 0 oklch(1 0 0 / 0.55),
+      0 0 0 1px oklch(0 0 0 / 0.075);
+  }
+  .dark .shadow-bevel {
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.4),
+      inset 0 1px 0 oklch(1 0 0 / 0.12),
+      0 0 0 1px oklch(1 0 0 / 0.045);
+  }
+  .dark .shadow-card {
+    box-shadow:
+      0 2px 6px oklch(0 0 0 / 0.42),
+      0 18px 42px oklch(0 0 0 / 0.32),
+      inset 0 1px 0 oklch(1 0 0 / 0.12),
+      0 0 0 1px oklch(1 0 0 / 0.055);
+  }
+  .dark .shadow-popover {
+    box-shadow:
+      0 2px 5px oklch(0 0 0 / 0.5),
+      0 18px 42px oklch(0 0 0 / 0.46),
+      inset 0 1px 0 oklch(1 0 0 / 0.13),
+      0 0 0 1px oklch(1 0 0 / 0.08);
+  }
+  /* The installed macOS window uses hidden inset titlebar chrome. Its first
+   * calendar row is both the application toolbar and the window drag surface;
+   * leave the native traffic lights a stable safe zone and keep controls live. */
+  html[data-qali-desktop] .calendar-window-header {
+    -webkit-app-region: drag;
+    /* Native traffic lights occupy roughly the first 78px. Utilities on the
+     * toolbar previously won the cascade, so enforce one platform-owned safe
+     * inset with breathing room for the month picker. */
+    padding-inline-start: 32px !important;
+    user-select: none;
+  }
+  .calendar-window-header {
+    min-height: 56px;
+    height: 56px;
+  }
+  html[data-qali-desktop]
+    .calendar-window-header
+    :is(button, a, input, select, textarea, [role="button"]) {
+    -webkit-app-region: no-drag;
+  }
+
+  /* Custom goo panels can contain components that use the regular semantic
+   * theme tokens. Bridge those tokens to the panel's resolved palette so an
+   * inverted panel remains legible regardless of the page theme around it. */
+  .goo-panel-theme {
+    --background: var(--goo-fill);
+    --foreground: var(--goo-foreground);
+    --card: color-mix(in oklch, var(--goo-foreground) 4%, var(--goo-fill));
+    --card-foreground: var(--goo-foreground);
+    --popover: var(--goo-fill);
+    --popover-foreground: var(--goo-foreground);
+    --primary: var(--goo-foreground);
+    --primary-foreground: var(--goo-fill);
+    --secondary: color-mix(in oklch, var(--goo-foreground) 4%, var(--goo-fill));
+    --secondary-foreground: var(--goo-foreground);
+    --muted: color-mix(in oklch, var(--goo-foreground) 4%, var(--goo-fill));
+    --muted-foreground: color-mix(
+      in oklch,
+      var(--goo-foreground) 60%,
+      var(--goo-fill)
+    );
+    --accent: var(--goo-hover-fill);
+    --accent-foreground: var(--goo-foreground);
+    --border: color-mix(in oklch, var(--goo-foreground) 7%, var(--goo-fill));
+    --input: color-mix(in oklch, var(--goo-foreground) 7%, var(--goo-fill));
+    --ring: color-mix(in oklch, var(--goo-foreground) 14%, var(--goo-fill));
+    color: var(--foreground);
+  }
+
+  /* Calendar event cards adapt to their rendered height: a size-query
+   * container lets short events drop the time line and tighten the title so
+   * the name stays visible instead of being clipped. */
+  .event-surface {
+    background-color: var(--event-surface-background);
+    border-color: var(--event-surface-border);
+    box-shadow: var(--event-surface-highlight);
+    color: var(--event-surface-foreground);
+    transition:
+      background-color var(--qali-motion-feedback) ease,
+      border-color var(--qali-motion-feedback) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .event-surface[data-event-surface-state="idle"]:hover,
+    .event-surface[data-event-surface-state="read-only"]:hover {
+      background-color: color-mix(
+        in oklab,
+        var(--event-surface-color) var(--event-surface-hover-fill),
+        var(--card)
+      );
+      border-color: color-mix(
+        in oklab,
+        var(--event-surface-color) var(--event-surface-hover-edge),
+        var(--border)
+      );
+    }
+  }
+  .event-surface:focus-visible {
+    background-color: color-mix(
+      in oklab,
+      var(--event-surface-color) var(--event-surface-focus-fill),
+      var(--card)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--event-surface-color) var(--event-surface-focus-edge),
+      var(--border)
+    );
+  }
+  .event-card {
+    container-type: size;
+  }
+  /* Own the title clamp here rather than via a Tailwind `line-clamp-*` utility:
+   * the utilities layer outranks the components layer, so a utility would beat
+   * the container-query overrides below and the title could never step down to
+   * one line. Default to two lines...
+   *
+   * The type scale is owned here for the same reason, and it has to be: a
+   * `text-sm`/`leading-tight` utility on the element silently beat the
+   * font-size steps below, so short cards kept full-size text in a box far too
+   * small for it and clipped the glyphs. Keep font sizing for the title and time
+   * in this file — never as a utility on the element. */
+  .event-card-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 0.875rem;
+    /* Keep enough leading for diacritics and descenders in compact cards. */
+    line-height: 1.25;
+  }
+  .event-card-time {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+  /* Attendees and conferencing sit at the bottom only when the rendered card
+   * has room for the existing title/time treatment plus a compact avatar row. */
+  .event-card-meta {
+    display: none;
+  }
+  @container (min-height: 80px) and (min-width: 72px) {
+    .event-card-meta {
+      display: flex;
+    }
+  }
+  /* Two avatars still form a useful stack in narrow week-view columns. */
+  @container (max-width: 91px) {
+    .event-card-attendee:nth-child(n + 3) {
+      display: none;
+    }
+  }
+  /* ...but a second line only earns its place when the card is tall enough for
+   * two title lines plus the time line. Below that, collapse to one line so the
+   * title never wraps into a clipped second row. */
+  @container (max-height: 52px) {
+    .event-card-title {
+      -webkit-line-clamp: 1;
+    }
+  }
+  /* Too short for a second line: drop the time and switch the title to a
+   * small, vertically centered single line so it stays legible, not clipped.
+   *
+   * This band runs all the way down to the card's `min-h` floor. There used to be
+   * a second, smaller step below 22px, but a 15-minute card only has ~10px of its
+   * own and is floored to that min-height anyway — shrinking the type further just
+   * made it unreadable without buying any room, so one step covers the range. */
+  @container (max-height: 38px) {
+    .event-card-time {
+      display: none;
+    }
+    .event-card-body {
+      justify-content: center;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .event-card-title {
+      font-size: 0.75rem;
+      -webkit-line-clamp: 1; /* short cards get one tightened line */
+    }
+  }
+}
+
+/* ── Assistant panel animations ──────────────────────────────────────────────
+ * The ai/ components (loading-state, thinking, text-streaming, task-rows) drive
+ * these by name from inline `animation:` styles. `spin` ships with Tailwind; the
+ * rest are custom and defined here. Reduced motion neutralises the decorative
+ * ones below. */
+@keyframes shimmer-text {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes stream-word-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(0.22em) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Chroma sweep: text reveals from a blurred, transparent state as the
+ * --chroma-* band sweeps left-to-right across the glyphs, settling on the
+ * theme's foreground colour. The solid stops use --foreground so text stays
+ * legible in both light and dark. Shared by the marketing hero (a slow 2s
+ * sweep, see apps/www) and `.chroma-stream` below (a snappy per-chunk reveal
+ * in the assistant panel). */
+@keyframes chroma-sweep {
+  0% {
+    background-position: 100% 0;
+    filter: blur(1px);
+  }
+  100% {
+    background-position: 0 0;
+    filter: blur(0);
+  }
+}
+
+/* Chat-tuned chroma reveal: each streamed chunk (`StreamingText` in
+ * packages/ui/src/components/ai/text-streaming.tsx) mounts with this class so a
+ * quick ~0.6s band sweeps across the new words and settles to foreground. */
+.chroma-stream {
+  background-image: linear-gradient(
+    90deg,
+    var(--foreground) 0,
+    var(--foreground) 33.33%,
+    var(--chroma-1) 40%,
+    var(--chroma-2) 45%,
+    var(--chroma-3) 50%,
+    var(--chroma-4) 55%,
+    var(--chroma-5) 60%,
+    transparent 66.67%,
+    transparent
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  will-change: background-position, filter;
+  animation: chroma-sweep 0.6s ease-out both;
+  filter: blur(1px);
+}
+
+/* Loading screen (shared by apps/www and apps/web via <LoadingScreen />): a
+ * single "Q" in the display font with the --chroma-* band sweeping across it on
+ * an infinite loop (unlike the hero's one-shot reveal). Two mirrored chroma
+ * bands per tile keep colour continuously present as it travels — the
+ * foreground stops sit only at the seams (0/50/100%), which line up under a
+ * one-tile translation for a seamless loop. */
+.chroma-loop {
+  background-image: linear-gradient(
+    90deg,
+    var(--foreground) 0,
+    var(--chroma-1) 10%,
+    var(--chroma-2) 18%,
+    var(--chroma-3) 25%,
+    var(--chroma-4) 32%,
+    var(--chroma-5) 40%,
+    var(--foreground) 50%,
+    var(--chroma-1) 60%,
+    var(--chroma-2) 68%,
+    var(--chroma-3) 75%,
+    var(--chroma-4) 82%,
+    var(--chroma-5) 90%,
+    var(--foreground) 100%
+  );
+  /* A wide container spreads the gradient tile over more px, so the glyph in
+   * the middle samples a broader, smoother slice of the sweep rather than the
+   * whole rainbow crammed into one small letter. */
+  display: inline-block;
+  width: min(72vmin, 360px);
+  text-align: center;
+  background-size: 200% 100%;
+  background-position: 0 0;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  will-change: background-position;
+  animation: chroma-loop-sweep 3s linear infinite;
+}
+
+@keyframes chroma-loop-sweep {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Exit: once fonts and assets are ready the overlay dissolves — fading while
+ * scaling up and blurring, so the "Q" appears to expand into the page rather
+ * than just switching off. Durations match so onTransitionEnd (which unmounts
+ * the overlay) fires when the whole animation has finished, not partway. */
+.loading-screen {
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.55s ease;
+}
+.loading-screen[data-hidden="true"] {
+  opacity: 0;
+  transform: scale(1.12);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Assistant dock mascot glyph (apps/web MascotGlyph). An outlined ghost at rest;
+ * on hover / keyboard focus the hero's `--chroma-*` foil band sweeps across the
+ * silhouette on a loop over that same outline; toggled open it becomes a solid
+ * inverted silhouette. `.mascot-trigger` is the dock's FAB button; `[data-active]`
+ * is set by the glyph when the panel is open. The eyes blink on the hero mascot's
+ * exact cadence (apps/www index.css), frozen under reduced motion below. */
+.mascot-glyph {
+  overflow: visible;
+}
+.mascot-glyph__fill,
+.mascot-glyph__outline {
+  transition: opacity 0.28s ease;
+}
+.mascot-glyph__fill {
+  opacity: 0;
+}
+/* The foil band waits off to the side, invisible, until a hover starts it. */
+.mascot-glyph__sweep {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mascot-trigger:hover .mascot-glyph__sweep,
+.mascot-trigger:focus-visible .mascot-glyph__sweep {
+  animation: mascot-glyph-sweep 1.6s ease-in-out infinite;
+}
+/* Toggled open: the solid inverted silhouette; the outline and any sweep drop. */
+.mascot-glyph[data-active="true"] .mascot-glyph__fill {
+  opacity: 1;
+}
+.mascot-glyph[data-active="true"] .mascot-glyph__outline {
+  opacity: 0;
+}
+.mascot-glyph[data-active="true"] .mascot-glyph__sweep {
+  animation: none;
+  opacity: 0;
+}
+
+/* The foil pass: fade in from the lifted side, travel across, fade out, then
+ * hold off-screen for the back half of the cycle so sweeps arrive in beats
+ * rather than as a continuous smear. */
+@keyframes mascot-glyph-sweep {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) translateX(-150px);
+  }
+  12% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 1;
+  }
+  54%,
+  100% {
+    opacity: 0;
+    transform: rotate(-14deg) translateX(230px);
+  }
+}
+/* Blink: the hero's asymmetric lid — a fast close, a beat shut, a whiskered
+ * open — applied to each eye group (mask holes and outline dots alike). */
+.mascot-glyph__eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-glyph-blink 6s 2.9s infinite;
+}
+
+@keyframes mascot-glyph-blink {
+  0%,
+  20% {
+    transform: scaleY(1);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.85, 0.3);
+  }
+  22.5% {
+    transform: scaleY(0.05);
+    animation-timing-function: cubic-bezier(0.2, 0.75, 0.3, 1);
+  }
+  26% {
+    transform: scaleY(1.06);
+    animation-timing-function: ease-out;
+  }
+  28.5% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qali-control,
+  .qali-floating-layer {
+    transition-duration: 100ms;
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .qali-floating-layer,
+  .qali-floating-layer[data-open],
+  .qali-floating-layer[data-closed],
+  .qali-floating-layer[data-state="delayed-open"] {
+    transform: none;
+  }
+  /* Freeze the blink and the hover foil sweep; the state crossfade stays (a
+   * gentle opacity change on interaction, not a looping animation). */
+  .mascot-glyph__eyes,
+  .mascot-glyph__sweep {
+    animation: none !important;
+    transform: none !important;
+  }
+  /* Freeze the shimmer/pixel loops to their resting state; entrances resolve
+   * instantly rather than sliding. The elapsed timer still ticks (it's JS). */
+  [style*="shimmer-text"] {
+    animation: none !important;
+    background-position: 0 0 !important;
+  }
+  [style*="pixel-on"] {
+    animation: none !important;
+  }
+  /* Without the sweep, .chroma-stream's resting state (transparent gradient
+   * end over the glyphs) would render invisible — so drop the effect entirely
+   * and show plain foreground text. */
+  .chroma-stream {
+    animation: none !important;
+    background: none !important;
+    -webkit-text-fill-color: currentColor;
+    color: var(--foreground);
+    filter: none !important;
+  }
+  /* Loading "Q": freeze the sweep at a resting position, and exit with a plain
+   * fade — no scale/blur — while still cleanly handing off to the app. */
+  .chroma-loop {
+    animation: none;
+    background-position: 50% 0;
+  }
+  .loading-screen {
+    transition: opacity 0.3s ease;
+  }
+  .loading-screen[data-hidden="true"] {
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  .dark {
+    --qali-glass-surface: var(--qali-surface-raised-opaque);
+    --qali-glass-panel-surface: var(--qali-surface-raised-opaque);
+    --qali-glass-control-surface: var(--qali-surface-raised-opaque);
+    --qali-glass-edge: var(--qali-glass-edge-firm);
+  }
+  .qali-glass,
+  .qali-goo-glass,
+  .qali-goo-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .qali-goo-glass {
+    background: var(--qali-surface-raised-opaque) !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .qali-glass,
+  .qali-goo-glass,
+  .qali-goo-backdrop,
+  .qali-control {
+    border: 1px solid ButtonText;
+    background: ButtonFace;
+    box-shadow: none;
+  }
+  .qali-control:focus-visible,
+  .qali-floating-control:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
+
+/* Sileo owns the requested SVG morph. These rules only make its floating
+   surface belong to Qali's neutral elevation ladder. */
+[data-sileo-svg] {
+  filter: drop-shadow(0 1px 1px oklch(0 0 0 / 0.12))
+    drop-shadow(0 14px 28px oklch(0 0 0 / 0.14));
+}
+[data-sileo-title] {
+  color: var(--foreground);
+  text-transform: none;
+}
+[data-sileo-description] {
+  color: var(--muted-foreground) !important;
+}
+.dark [data-sileo-svg] {
+  filter: drop-shadow(0 1px 2px oklch(0 0 0 / 0.55))
+    drop-shadow(0 18px 36px oklch(0 0 0 / 0.45));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sileo-toast],
+  [data-sileo-header-inner] {
+    animation: none !important;
+    transition-duration: 100ms !important;
+  }
+}

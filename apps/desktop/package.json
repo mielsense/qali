@@ -1,0 +1,40 @@
+{
+  "name": "@qali/desktop",
+  "version": "0.1.0",
+  "description": "A private local-first calendar for macOS.",
+  "author": "Natnael Taddese",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "package": "bun ../../scripts/desktop/build-app.ts",
+    "package:local": "bun ../../scripts/desktop/build-app.ts --local-development",
+    "generate-output-policy:local": "bun ../../scripts/desktop/generate-packaged-output-policy.ts --local-development",
+    "release:mac": "bun ../../scripts/desktop/release-macos.ts",
+    "test": "bun test test",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@qali/desktop-contracts": "workspace:*",
+    "convex": "1.42.1",
+    "electron-updater": "^6.8.9",
+    "esbuild": "0.27.0",
+    "prettier": "^3.9.5",
+    "ws": "8.21.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@qali/config": "workspace:*",
+    "@tailwindcss/vite": "^4.3.2",
+    "@tanstack/router-plugin": "^1.168.19",
+    "@vitejs/plugin-react": "5.0.4",
+    "electron": "43.2.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "5.0.0",
+    "typescript": "catalog:",
+    "vite": "7.1.10"
+  }
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>qali</title>
+    <!-- Static installable app icon (home screen / PWA). The browser-tab favicon
+         is injected at runtime by renderDateFavicon(); these do not collide. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#111111" />
+    <!-- Apply the theme class before first paint so a reload doesn't flash the
+         default (light) background before next-themes mounts. Mirrors the
+         ThemeProvider config in __root.tsx (attribute=class, defaultTheme=dark,
+         storageKey=vite-ui-theme). -->
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("vite-ui-theme") || "dark";
+          if (theme === "system") {
+            theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      /* Base page background per theme, so the paint before the app's CSS
+         loads matches --background (dark #111111 / light near-white). */
+      html.dark {
+        background-color: #111111;
+      }
+      html.light {
+        background-color: #ffffff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
