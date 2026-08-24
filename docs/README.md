@@ -23,6 +23,10 @@ limited to a versioned preload contract.
 
 ## Product views
 
+| Week view | Month view |
+| --- | --- |
+| ![Qali week view](assets/screenshots/calendar.png) | ![Qali month view](assets/screenshots/month.png) |
+
 | Calendar Insights | Searchable settings |
 | --- | --- |
 | ![Calendar Insights](assets/screenshots/insights.png) | ![Searchable Qali settings](assets/screenshots/settings.png) |

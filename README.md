@@ -31,11 +31,19 @@ in macOS Keychain.
 
 Qali is built for Apple Silicon Macs running macOS 12 or later.
 
+## Month at a glance
+
+The month view keeps recurring schedules, calendar colors, and several weeks
+of context visible without opening each day.
+
+![Qali month view with recurring events across multiple calendars](docs/assets/screenshots/month.png)
+
 ## Calendar Insights
 
 Insights are computed from the calendar data already stored on the device. The
-28-day view shows event count, scheduled time, average duration, busiest day,
-daily load, and weekday patterns.
+28-day view shows event count, scheduled time, average and longest events,
+active days, daily load, event cadence, weekday patterns, and time-of-day
+distribution.
 
 ![Qali Calendar Insights with event counters and scheduled-time charts](docs/assets/screenshots/insights.png)
 
