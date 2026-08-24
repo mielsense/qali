@@ -751,8 +751,14 @@ describe("desktop multi-Google identity", () => {
 
   test("scoped migration recovers a hashed event calendar from its bound membership", async () => {
     const t = convexTest(schema, modules);
-    const { connectionId, eventId, offlineCreateId, offlineEventId, seriesId } =
-      await t.run(async (ctx) => {
+    const {
+      connectionId,
+      eventId,
+      legacyLocalOnlyId,
+      offlineCreateId,
+      offlineEventId,
+      seriesId,
+    } = await t.run(async (ctx) => {
       const connectionId = await ctx.db.insert("calendarConnections", {
         userId: USER,
         provider: "google",
@@ -826,6 +832,19 @@ describe("desktop multi-Google identity", () => {
         status: "confirmed",
         syncState: "pending",
       });
+      const legacyLocalOnlyId = await ctx.db.insert("events", {
+        userId: USER,
+        connectionId,
+        localEventId: "legacy_local_only_event_001",
+        accountId: ACCOUNT_A,
+        calendarId: CALENDAR_A,
+        googleEventId: "legacy-local-only-event",
+        googleUpdatedMs: 3,
+        startMs: 7_000,
+        endMs: 8_000,
+        allDay: false,
+        status: "confirmed",
+      });
       const seriesId = await ctx.db.insert("recurringSeries", {
         userId: USER,
         connectionId,
@@ -837,6 +856,7 @@ describe("desktop multi-Google identity", () => {
       return {
         connectionId,
         eventId,
+        legacyLocalOnlyId,
         offlineCreateId,
         offlineEventId,
         seriesId,
@@ -858,6 +878,10 @@ describe("desktop multi-Google identity", () => {
     }
 
     await t.run(async (ctx) => {
+      // Older on-disk databases can predate the provider update timestamp.
+      // Account reconciliation must not make that sync metadata a startup
+      // precondition once ownership is already proven.
+      await ctx.db.patch(legacyLocalOnlyId, { providerUpdatedMs: undefined });
       expect(await ctx.db.get(eventId)).toMatchObject({
         accountId: ACCOUNT_A,
         calendarId: CALENDAR_A,
@@ -884,6 +908,11 @@ describe("desktop multi-Google identity", () => {
         calendarId: CALENDAR_A,
         connectionId,
         syncState: "pending",
+      });
+      expect(await ctx.db.get(legacyLocalOnlyId)).toMatchObject({
+        accountId: ACCOUNT_A,
+        calendarId: CALENDAR_A,
+        connectionId,
       });
     });
 

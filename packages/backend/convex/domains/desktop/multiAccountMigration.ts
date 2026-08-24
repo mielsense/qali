@@ -723,19 +723,13 @@ export async function auditGoogleAccountMigration(
         continue;
       checked += 1;
       const snapshot = row.remoteSnapshot as CalendarEventSnapshot | undefined;
-      const hasOptimisticLocalIdentity =
-        row.syncState !== undefined &&
-        row.syncState !== "synced" &&
-        row.syncState !== "succeeded" &&
-        row.syncState !== "cancelled";
+      // This audit proves account and connection ownership. It must not turn
+      // incomplete sync metadata into a startup failure: databases created by
+      // older Qali builds can contain valid local-first rows without the newer
+      // provider identity fields, and the sync queue repairs those separately.
       if (
         row.connectionId !== connection._id ||
         row.accountId !== args.accountId ||
-        row.providerEventId === undefined ||
-        row.providerUpdatedMs === undefined ||
-        (!hasOptimisticLocalIdentity &&
-          (row.providerEventId !== row.googleEventId ||
-            row.providerUpdatedMs !== row.googleUpdatedMs)) ||
         (snapshot !== undefined &&
           (!(await snapshotMatchesAccount(snapshot, args.accountId)) ||
             row.calendarId !== snapshot.calendarId))
