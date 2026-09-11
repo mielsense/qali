@@ -27,7 +27,7 @@ function DataFrame({
   return (
     <section
       className={cn(
-        "rounded-[22px] border border-[var(--qali-edge-subtle)] bg-[var(--qali-surface-flat)] p-1",
+        "qali-frosted-panel rounded-[22px] p-1",
         className,
       )}
     >

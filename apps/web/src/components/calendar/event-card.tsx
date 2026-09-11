@@ -166,7 +166,7 @@ export function EventCard({
         <p className="event-card-title font-medium">
           {event.summary ?? "(No title)"}
         </p>
-        <p className="event-card-time truncate text-muted-foreground">
+        <p className="event-card-time truncate opacity-75">
           {`${format(event.startMs, "h:mm")} – ${format(event.endMs, "h:mm a")}`}
         </p>
         {(attendees.length > 0 || event.hangoutLink) && (
@@ -192,7 +192,7 @@ export function EventCard({
               <span
                 role="img"
                 aria-label="Google Meet attached"
-                className="event-card-meeting ml-auto shrink-0 text-muted-foreground/45"
+                className="event-card-meeting ml-auto shrink-0 opacity-65"
               >
                 <HugeiconsIcon icon={Video01Icon} size={15} strokeWidth={1.8} />
               </span>

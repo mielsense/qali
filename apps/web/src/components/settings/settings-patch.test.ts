@@ -24,6 +24,7 @@ function snapshot(revision: number, interfaceSounds: boolean): SettingsSnapshot 
         glassOpacity: 0.78,
         transparency: "follow-system",
         interfaceSounds,
+        primaryColor: "mauve",
       },
       keybindings: { overrides: {} },
     },

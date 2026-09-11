@@ -34,6 +34,8 @@ import { useTheme } from "@/components/theme-provider";
 import { isWritableCalendar } from "@/components/calendar/create-calendar-selection";
 import { calendarDisplayName } from "@/components/calendar/lib";
 
+import { PRIMARY_COLORS } from "@/components/settings/primary-colors";
+
 const hourHeights = [72, 96, 120] as const;
 const views = ["day", "week", "month"] as const;
 const FALLBACK_TIME_ZONES = [
@@ -57,7 +59,7 @@ export const Route = createFileRoute("/_workspace/settings/calendar")({
 
 function CalendarSettingsPage() {
   const { patch, snapshot } = useQaliSettings();
-  const { setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const calendar = snapshot.settings.calendar;
   const calendars = useQuery(api.calendar.listCalendars) ?? [];
   const writableCalendars = calendars.filter(isWritableCalendar);
@@ -89,7 +91,6 @@ function CalendarSettingsPage() {
   };
   const setAppearanceTheme = (theme: "system" | "light" | "dark") => {
     setTheme(theme);
-    void patch({ appearance: { theme } });
   };
 
   return (
@@ -274,6 +275,24 @@ function CalendarSettingsPage() {
             value={appearance.theme}
             onValueChange={setAppearanceTheme}
           />
+        </SettingsRow>
+        <SettingsRow label="Primary color" description="Choose the accent for buttons, navigation, and focus rings.">
+          <div role="group" aria-label="Primary color" className="flex flex-wrap items-center gap-2">
+            {PRIMARY_COLORS.map((color) => (
+              <button
+                key={color.value}
+                type="button"
+                aria-label={color.label}
+                aria-pressed={appearance.primaryColor === color.value}
+                title={color.label}
+                onClick={() => void patch({ appearance: { primaryColor: color.value } })}
+                className="flex size-8 items-center justify-center rounded-full border border-border outline-none transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--qali-accent)] aria-pressed:ring-2 aria-pressed:ring-foreground aria-pressed:ring-offset-2 aria-pressed:ring-offset-card"
+                style={{ backgroundColor: color[resolvedTheme] }}
+              >
+                {appearance.primaryColor === color.value ? <span aria-hidden="true" className="size-2 rounded-full bg-black/70" /> : null}
+              </button>
+            ))}
+          </div>
         </SettingsRow>
         <SettingsRow
           label="Reduce transparency"

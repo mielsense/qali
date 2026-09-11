@@ -14,6 +14,7 @@ import {
   TIME_ZONE_GUTTER_WIDTH,
 } from "./calendar-header-layout";
 import { dayKey } from "./lib";
+import { allDaySurfacePosition } from "./event-surface";
 import { createZonedCalendarClock } from "./zoned-calendar-clock";
 
 describe("calendar header geometry", () => {
@@ -38,8 +39,8 @@ describe("calendar header geometry", () => {
       internallyScrollable: false,
     });
     expect(allDayBandMetrics({ laneCount: 7, expanded: true })).toEqual({
-      visibleRows: 3,
-      height: 108,
+      visibleRows: 6,
+      height: 196,
       internallyScrollable: true,
     });
     expect(allDayBandMetrics({ laneCount: 7, expanded: false })).toEqual({
@@ -47,6 +48,16 @@ describe("calendar header geometry", () => {
       height: 36,
       internallyScrollable: false,
     });
+  });
+
+  test("keeps a single visible all-day row regardless of the overflow count", () => {
+    for (const laneCount of [1, 2, 3, 12]) {
+      const band = allDayBandMetrics({ laneCount, expanded: false });
+      expect(band.visibleRows).toBe(1);
+      expect(band.height).toBe(36);
+      const first = allDaySurfacePosition(0);
+      expect(first.topPx + first.heightPx).toBeLessThan(band.height);
+    }
   });
 
   test("compensates the timed scroll when the sticky band changes height", () => {

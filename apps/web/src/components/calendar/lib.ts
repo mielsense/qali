@@ -182,7 +182,8 @@ export function addPages(view: CalendarView, start: Date, n: number): Date {
 /** The days rendered by a single page. Month pages span a fixed 6×7 grid. */
 export function pageDays(view: CalendarView, start: Date): Date[] {
   if (view === "day") return [start];
-  if (view === "week") return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  if (view === "week")
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const gridStart = startOfWeek(start, { weekStartsOn: WEEK_STARTS_ON });
   return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 }
@@ -280,7 +281,10 @@ export function nextFreeSlot(
     if (!clash) return { startMs, endMs };
     // Jump past the blocking event, snapped forward, rather than crawling by one
     // slot through a long meeting.
-    startMs = Math.max(startMs + SNAP_MS, Math.ceil(clash.endMs / SNAP_MS) * SNAP_MS);
+    startMs = Math.max(
+      startMs + SNAP_MS,
+      Math.ceil(clash.endMs / SNAP_MS) * SNAP_MS,
+    );
   }
 
   // Day is full: fall back to the last slot that fits before midnight.
@@ -315,7 +319,10 @@ const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
  * scale. For now only the user's current timezone is shown; additional zones
  * will be appended here when multi-timezone support lands. */
 export const TIMEZONES: { id: string; label: string }[] = [
-  { id: LOCAL_TZ, label: LOCAL_TZ.split("/").pop()?.replace(/_/g, " ") ?? "Local" },
+  {
+    id: LOCAL_TZ,
+    label: LOCAL_TZ.split("/").pop()?.replace(/_/g, " ") ?? "Local",
+  },
 ];
 
 /** Width of each timezone gutter column, in pixels. */
@@ -347,7 +354,7 @@ export function dayColsTemplate(n: number): string {
 export const HEADER_DATE_HEIGHT = 38;
 /** Geometry for the all-day rail. The compact rail shows one stable lane. */
 export const ALLDAY_COLLAPSED_LANES = 1;
-export const ALLDAY_MAX_EXPANDED_LANES = 8;
+export const ALLDAY_MAX_EXPANDED_LANES = 6;
 export const ALLDAY_EVENT_HEIGHT = 28;
 export const ALLDAY_EVENT_GAP = 4;
 export const ALLDAY_BAND_PADDING = 4;
@@ -466,31 +473,33 @@ export function layoutAllDayEvents(
       .map((other) => String(other.event._id)),
   );
 
-  return spans
-    .map((span, index) => {
-      let lane = laneEnds.findIndex((endIdx) => endIdx < span.startIdx);
-      if (lane === -1) lane = laneEnds.length;
-      laneEnds[lane] = span.endIdx;
-      const conflicts = conflictingEventIds[index] ?? [];
-      return {
-        ...span,
-        lane,
-        isConflicting: conflicts.length > 0,
-        conflictingEventIds: conflicts,
-      };
-    })
-    // Drop cards fully outside the window, then clamp the rest to it. Lanes are
-    // already assigned from the full spans above, so clamping only resizes each
-    // card for rendering — it never reshuffles rows.
-    .filter(
-      ({ startIdx, endIdx }) =>
-        endIdx >= visibleStartIdx && startIdx <= visibleEndIdx,
-    )
-    .map((entry) => ({
-      ...entry,
-      startIdx: Math.max(entry.startIdx, visibleStartIdx),
-      endIdx: Math.min(entry.endIdx, visibleEndIdx),
-    }));
+  return (
+    spans
+      .map((span, index) => {
+        let lane = laneEnds.findIndex((endIdx) => endIdx < span.startIdx);
+        if (lane === -1) lane = laneEnds.length;
+        laneEnds[lane] = span.endIdx;
+        const conflicts = conflictingEventIds[index] ?? [];
+        return {
+          ...span,
+          lane,
+          isConflicting: conflicts.length > 0,
+          conflictingEventIds: conflicts,
+        };
+      })
+      // Drop cards fully outside the window, then clamp the rest to it. Lanes are
+      // already assigned from the full spans above, so clamping only resizes each
+      // card for rendering — it never reshuffles rows.
+      .filter(
+        ({ startIdx, endIdx }) =>
+          endIdx >= visibleStartIdx && startIdx <= visibleEndIdx,
+      )
+      .map((entry) => ({
+        ...entry,
+        startIdx: Math.max(entry.startIdx, visibleStartIdx),
+        endIdx: Math.min(entry.endIdx, visibleEndIdx),
+      }))
+  );
 }
 
 export function visibleAllDayMetrics(
@@ -502,7 +511,8 @@ export function visibleAllDayMetrics(
   let hiddenEventCount = 0;
 
   for (const event of events) {
-    if (event.endIdx < visibleStartIdx || event.startIdx > visibleEndIdx) continue;
+    if (event.endIdx < visibleStartIdx || event.startIdx > visibleEndIdx)
+      continue;
     laneCount = Math.max(laneCount, event.lane + 1);
     if (event.lane >= ALLDAY_COLLAPSED_LANES) hiddenEventCount += 1;
   }
@@ -528,7 +538,9 @@ export function snappedMsFromOffsetY(
   dayStartMs: number,
   dayHeightPx: number,
 ): number {
-  const steps = Math.round((offsetY / dayHeightPx) * ((24 * 60) / SNAP_MINUTES));
+  const steps = Math.round(
+    (offsetY / dayHeightPx) * ((24 * 60) / SNAP_MINUTES),
+  );
   const ms = dayStartMs + steps * SNAP_MS;
   return Math.min(Math.max(ms, dayStartMs), dayStartMs + MS_PER_DAY);
 }
@@ -668,8 +680,7 @@ export function eventHorizontalBox(
     leftPct: 0,
     widthPct: 100,
     insetStartPx:
-      EVENT_SURFACE_GUTTERS.horizontalPx +
-      stackIndentPx(positioned.stackIndex),
+      EVENT_SURFACE_GUTTERS.horizontalPx + stackIndentPx(positioned.stackIndex),
     insetEndPx: EVENT_SURFACE_GUTTERS.horizontalPx,
   };
 }
@@ -825,3 +836,21 @@ export function layoutDayEvents(
 
 // Event/calendar colors live in ./colors.ts — they resolve against Google's
 // synced color data rather than anything derived here.
+
+/** Anchor overflow to a visible overlapping event, never to the time gutter.
+ * Promote an isolated higher-lane event when its earlier neighbour is offscreen. */
+export function collapsedAllDayStacks(events: readonly AllDayEventLayout[]) {
+  const stacks: { visible: AllDayEventLayout; hidden: AllDayEventLayout[] }[] =
+    [];
+  for (const entry of [...events].sort(
+    (a, b) => a.lane - b.lane || a.startIdx - b.startIdx,
+  )) {
+    const stack = stacks.find(
+      ({ visible }) =>
+        visible.startIdx <= entry.endIdx && visible.endIdx >= entry.startIdx,
+    );
+    if (stack) stack.hidden.push(entry);
+    else stacks.push({ visible: entry, hidden: [] });
+  }
+  return stacks;
+}

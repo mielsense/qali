@@ -59,6 +59,7 @@ function settingsSnapshot(revision = 0) {
         glassOpacity: 0.78,
         transparency: "follow-system" as const,
         interfaceSounds: true,
+        primaryColor: "mauve" as const,
       },
       keybindings: { overrides: {} },
     },

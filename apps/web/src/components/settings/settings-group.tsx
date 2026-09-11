@@ -20,7 +20,7 @@ export function SettingsGroup({
           {description}
         </p>
       </header>
-      <div className="rounded-2xl bg-[var(--qali-surface-flat)] p-1">{children}</div>
+      <div className="rounded-2xl qali-settings-card p-1">{children}</div>
     </section>
   );
 }

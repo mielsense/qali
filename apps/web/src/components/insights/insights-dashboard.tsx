@@ -100,7 +100,7 @@ export function InsightsDashboard() {
   ];
 
   const toolbar = (
-    <header className="flex h-full items-center justify-between px-4">
+    <header className="insights-window-header flex h-full items-center justify-between px-4">
       <div className="flex items-baseline gap-2">
         <h1 className="text-sm font-semibold tracking-tight">Insights</h1>
         <span className="text-xs text-muted-foreground">Calendar pulse</span>

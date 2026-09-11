@@ -323,7 +323,7 @@ export function CalendarWeekView() {
   const toolbar = (
     <header
       data-dock-keep-open
-      className="calendar-window-header flex h-[52px] shrink-0 items-center justify-between gap-4 bg-transparent px-4"
+      className="calendar-window-header flex h-12 shrink-0 items-center justify-between gap-4 bg-transparent px-4"
     >
       <div className="flex items-center justify-center gap-2 text-sm">
         <MonthPicker
@@ -372,7 +372,7 @@ export function CalendarWeekView() {
           </Button>
           <Button
             type="button"
-            variant="raised"
+            variant="ghost"
             size="icon-sm"
             aria-label="Previous"
             onClick={dispatchPrevious}
@@ -382,7 +382,7 @@ export function CalendarWeekView() {
           </Button>
           <Button
             type="button"
-            variant="raised"
+            variant="ghost"
             size="icon-sm"
             aria-label="Next"
             onClick={dispatchNext}

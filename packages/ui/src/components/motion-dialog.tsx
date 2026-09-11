@@ -37,7 +37,7 @@ export function MotionDialog({
                   transition={
                     reduceMotion ? { duration: 0 } : { duration: 0.16 }
                   }
-                  className="fixed inset-0 z-[90] bg-black/45 backdrop-blur-[2px]"
+                  className="fixed inset-0 z-[90] bg-foreground/[0.06] backdrop-blur-[6px] backdrop-saturate-125 dark:bg-background/[0.03]"
                 />
               }
             />
@@ -46,7 +46,7 @@ export function MotionDialog({
                 aria-label={label}
                 render={
                   <motion.div
-                    initial={false}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.975, y: -8 }}
                     animate={
                       open
                         ? { opacity: 1, scale: 1, y: 0 }

@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
-const productAccent = ["#b2", "4b3d"].join("");
+const productAccent = ["#88", "39ef"].join("");
 const components = [
   "button.tsx",
   "popover.tsx",
@@ -17,21 +17,21 @@ const components = [
 );
 
 describe("Qali typography", () => {
-  test("uses the native macOS SF Pro system stack for interface text", () => {
+  test("uses Portal’s locally bundled Geist for interface text", () => {
     expect(source.replace(/\s+/g, " ")).toContain(
-      '--font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;',
+      '--font-sans: "Geist Variable", -apple-system, sans-serif;',
     );
     expect(source).not.toContain('@import "@fontsource-variable/lexend"');
     expect(source).toContain("-webkit-font-smoothing: antialiased");
   });
 
-  test("uses Geist Pixel Square as the restrained display highlight", () => {
+  test("uses the same Geist family for interface headings", () => {
     expect(source).toContain('font-family: "Geist Pixel Square"');
     expect(source).toContain(
       'url("../assets/fonts/geist/GeistPixel-Square.woff2")',
     );
     expect(source.replace(/\s+/g, " ")).toContain(
-      '--font-display: "Geist Pixel Square", "Geist Mono",',
+      '--font-display: "Geist Variable", -apple-system, sans-serif;',
     );
     expect(source).toContain("--font-display--font-weight: 500;");
     expect(source).not.toContain("Fraunces");
@@ -100,7 +100,7 @@ describe("Qali glass and elevation system", () => {
       "background-image: var(--qali-glass-grain), linear-gradient",
     );
     expect(source).toContain("html[data-qali-desktop].dark");
-    expect(source).toContain("rgb(24 24 24 / 0.46)");
+    expect(source).toContain("color-mix(in srgb, var(--sidebar-background) 50%, transparent)");
     expect(source).toContain(".qali-glass::after");
     expect(source).toContain(
       "var(--qali-glass-raised-surface) var(--qali-glass-opacity)",
@@ -118,7 +118,7 @@ describe("Qali glass and elevation system", () => {
   test("keeps goo menus opaque and theme-aware without glass blur", () => {
     expect(source).toContain("--qali-goo-fill: var(--popover);");
     expect(source).toContain("--qali-goo-control-fill:");
-    expect(source).toContain("--qali-goo-fill: #202020;");
+    expect(source).toContain("--qali-goo-fill: oklch(0.22 0.009 295);");
     expect(source).toContain(".qali-goo-surface {");
     expect(components[4]).toContain(
       'const FILL = "var(--qali-goo-fill)";',

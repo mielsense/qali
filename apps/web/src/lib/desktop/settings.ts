@@ -140,6 +140,7 @@ export function createRendererDefaultSettings(
         glassOpacity: 0.78,
         transparency: "follow-system" as const,
         interfaceSounds: true,
+        primaryColor: "mauve",
       }),
       keybindings: Object.freeze({ overrides: Object.freeze({}) }),
     }),

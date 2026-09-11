@@ -45,9 +45,9 @@ describe("settings navigation", () => {
     expect(layout).not.toContain("<main");
     expect(layout).toContain('aria-label="Settings"');
     expect(layout).toContain("qali-settings-layout");
-    expect(layout).toContain("bg-background");
+    expect(layout).toContain("bg-transparent");
     expect(sidebar).toContain("qali-settings-sidebar");
-    expect(sidebar).not.toContain("bg-card");
+    expect(sidebar).toContain("bg-background");
     expect(appearance).toContain(
       '<Navigate to="/settings/calendar" replace />',
     );

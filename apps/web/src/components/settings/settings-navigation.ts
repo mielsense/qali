@@ -61,6 +61,13 @@ export const SETTINGS_NAVIGATION = [
 
 export const SETTINGS_SEARCH_INDEX = [
   {
+    label: "Primary color",
+    description: "Choose the accent for buttons and navigation",
+    keywords: ["accent", "palette", "mauve", "blue", "teal", "green", "peach", "pink", "red", "lavender"],
+    to: "/settings/calendar",
+    anchor: "settings-row-primary-color",
+  },
+  {
     label: "Visible hours",
     description: "First and final hour shown in day and week views",
     keywords: ["working hours", "start", "end", "timeline"],

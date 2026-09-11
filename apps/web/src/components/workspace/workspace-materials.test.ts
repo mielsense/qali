@@ -53,21 +53,25 @@ describe("workspace floating materials", () => {
     expect(layout).toContain("<AssistantDock />");
   });
 
-  test("keeps settings on the same opaque canvas as the calendar", () => {
+  test("uses Portal’s opaque secondary navigation panel beside the frosted rail", () => {
     const layout = read("../settings/settings-layout.tsx");
     const sidebar = read("../settings/settings-sidebar.tsx");
 
-    expect(layout).toContain("bg-background");
+    expect(layout).toContain("bg-transparent");
     expect(sidebar).toContain("bg-background");
-    expect(sidebar).not.toContain("bg-card");
+
   });
 
-  test("uses the calendar canvas color for structural header and rail", () => {
+  test("uses one frosted material for the structural header and rail", () => {
     const chrome = read("./workspace-chrome.tsx");
     const styles = read("../../../../../packages/ui/src/styles/globals.css");
 
-    expect(chrome).toContain("bg-background");
+    expect(chrome).toContain("qali-shell-material");
     expect(chrome).not.toContain('variant="shell"');
+    const entry = read("../../../index.desktop.html");
+    expect(entry).toContain("html, body, #app { background: transparent; }");
+    expect(entry).not.toContain("background-color: #111111");
+    expect(chrome).not.toContain("focus-visible:outline-inset");
     expect(styles).toContain(".qali-shell-linework::after");
     expect(styles).toContain("top: 0;");
   });

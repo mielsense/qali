@@ -19,7 +19,7 @@ export function WorkspaceContent() {
     <CalendarPreferencesProvider>
       <DockProvider>
         <AssistantDockProvider>
-          <div className="flex h-full min-h-0 min-w-0 overflow-hidden bg-background">
+          <div className="flex h-full min-h-0 min-w-0 overflow-hidden bg-transparent">
             <div className="relative min-w-0 flex-1">
               <WorkspaceChrome>
                 <Outlet />

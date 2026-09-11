@@ -7453,10 +7453,10 @@
       "sha256": "ca14b5bf94a9771a30cd0cf6baa7d046b3216543ca1e29c58b2b28f70c28b34b"
     },
     {
-      "bytes": 476917,
+      "bytes": 477175,
       "mode": 420,
       "path": "apps/desktop/packaged-output-policy.json",
-      "sha256": "89b8f98595b009c222bdb97225f433d411f2448ff2355b04c72b16aeedc5d040"
+      "sha256": "a9b68f9687973c8439f5f5f03d4ecf9c4dac532d302e81a4bc519a1a1346279e"
     },
     {
       "bytes": 1483616,
@@ -7903,10 +7903,10 @@
       "sha256": "ea89812651422624c6fbf01a94ce9f4b9100de73337cc36945b0c177b9585786"
     },
     {
-      "bytes": 3918,
+      "bytes": 3949,
       "mode": 420,
       "path": "apps/desktop/src/main/settings/schema.ts",
-      "sha256": "b91e2d3dca98aa7e327700692bcb9a744536fc82dde500c992827c2f75171539"
+      "sha256": "2255c3b94c38365646656fac2a937cc92be9a18c1fcd66317e5f2d69793864b3"
     },
     {
       "bytes": 14509,
@@ -7969,10 +7969,10 @@
       "sha256": "7dcb2f8a999dc89be742334f50b8eb1c00e64acbaa0ff0d61fa8696481fa07f2"
     },
     {
-      "bytes": 1067,
+      "bytes": 1091,
       "mode": 420,
       "path": "apps/web/index.desktop.html",
-      "sha256": "3374796073ed3da930cfcda3d661af1aa0137ade4de4a06171a77224181a4eee"
+      "sha256": "256998a8623c223d581affd0a385bda81b824f731b623c3b244e966a8e599ce7"
     },
     {
       "bytes": 1726,
@@ -8035,16 +8035,16 @@
       "sha256": "b9985775f21e96c61af6768563e501b22f9d552e13045e807f41bed0eba2935e"
     },
     {
-      "bytes": 2966,
+      "bytes": 3004,
       "mode": 420,
       "path": "apps/web/src/commands/command-menu-items.ts",
-      "sha256": "46b7ff413ebf7ec40a44a71aad3ecb223dde8b1ff137212c9ffa8196a9c2ca5c"
+      "sha256": "94a055196fa7ac3a4bf9e97e112e77f078fd288aab8522225c15787c9cb38a9a"
     },
     {
-      "bytes": 5209,
+      "bytes": 10620,
       "mode": 420,
       "path": "apps/web/src/commands/command-menu.tsx",
-      "sha256": "9628844a15dec7c59511fdabfd9577a1f0cd83400dc8a6b3a9cfb7009a23bc18"
+      "sha256": "1ba95561e2414797d3446be9d5bc4182acc8187eea2f75a36ddac3e8cd109294"
     },
     {
       "bytes": 4317,
@@ -8083,6 +8083,18 @@
       "sha256": "40a1da5e4e5429221e1887490e379bc904f5565bb493425a83cb99ce528862d0"
     },
     {
+      "bytes": 552,
+      "mode": 420,
+      "path": "apps/web/src/components/calendar/all-day-overflow.test.ts",
+      "sha256": "18723ba7bee41d941721264377df806f0de76c2d37e9dfb3c00376cc8dcbdd37"
+    },
+    {
+      "bytes": 3688,
+      "mode": 420,
+      "path": "apps/web/src/components/calendar/all-day-overflow.tsx",
+      "sha256": "33d0e7261f57efefb3cd18b30101948ace4fe9522d2186e3c6e6e33ae8414a65"
+    },
+    {
       "bytes": 2197,
       "mode": 420,
       "path": "apps/web/src/components/calendar/avatar.tsx",
@@ -8107,16 +8119,16 @@
       "sha256": "029d888573be3298eaf262d5d64b702235e3e8779609629233caf1c934ffe770"
     },
     {
-      "bytes": 4002,
+      "bytes": 4465,
       "mode": 420,
       "path": "apps/web/src/components/calendar/calendar-header-layout.test.ts",
-      "sha256": "69301a62652fc952a1b355600e0d9baed44e7a2ce3808f13c5bfa69ee1d48b91"
+      "sha256": "6e52c46fd45c91e792a5f56114b38b2fb52b9fc458a49dc40309b2ea5b6c43cd"
     },
     {
-      "bytes": 3801,
+      "bytes": 3928,
       "mode": 420,
       "path": "apps/web/src/components/calendar/calendar-header-layout.ts",
-      "sha256": "599980a64c52b006f6e4894ce27cbc878386db8e65d2ea2c3d359717f2be31a9"
+      "sha256": "438180e80d717b4ae5865668261973f89b8ccd6cdea7c1c8af8465f287913212"
     },
     {
       "bytes": 7786,
@@ -8131,10 +8143,10 @@
       "sha256": "d495aec2101d5912b9ef5f885fbef4e9fd818081afdc93250b65426878592eb2"
     },
     {
-      "bytes": 23153,
+      "bytes": 23147,
       "mode": 420,
       "path": "apps/web/src/components/calendar/calendar.tsx",
-      "sha256": "5a951f1708df8e9da9463c11f00d65050a1a3d8d6543773f272faac0697ee59b"
+      "sha256": "fc424f6b79413da7dc1ce52308849caede9af4c578e6b45e040e221ccc5c5052"
     },
     {
       "bytes": 872,
@@ -8173,10 +8185,10 @@
       "sha256": "966c50af46bfcf576e65e621bfcee6fd832c506d89f7df6e561a0132da6faacc"
     },
     {
-      "bytes": 8812,
+      "bytes": 8787,
       "mode": 420,
       "path": "apps/web/src/components/calendar/event-card.tsx",
-      "sha256": "4012fe90cb2314e0dbab2574a81178059f1cc88b744de1084bea5e7b003c7733"
+      "sha256": "55d3d2439a0a314beb4fa33e49ee42b81800b3483067ed22951e19497522a10e"
     },
     {
       "bytes": 7111,
@@ -8239,16 +8251,16 @@
       "sha256": "ca3b1a03b540a990cf099e912b01844e3016a0a748025489bbb0d216078e1eb2"
     },
     {
-      "bytes": 4200,
+      "bytes": 4287,
       "mode": 420,
       "path": "apps/web/src/components/calendar/event-surface.test.ts",
-      "sha256": "82b776f6eb3fd2afe0229f5c71bd451c141acd64ed7de6fd1e106ac3695c02b6"
+      "sha256": "c469af4acd1828d7994de340528b26d2d5977e8a4b2b660c4c8a48f046053256"
     },
     {
-      "bytes": 3277,
+      "bytes": 3360,
       "mode": 420,
       "path": "apps/web/src/components/calendar/event-surface.ts",
-      "sha256": "81737aa466b6c74745ce8342ad2c94f573fe2bc30131c6d14f513b584685682c"
+      "sha256": "5b3a439bc403db25394178aff0976ad1d053a6a6d7ff949b2e08824a475c540e"
     },
     {
       "bytes": 1923,
@@ -8275,22 +8287,22 @@
       "sha256": "5a35bb125537d83cf3c9b418d444c95808b6a1947f2dcb2282703c19b03f436d"
     },
     {
-      "bytes": 5223,
+      "bytes": 3941,
       "mode": 420,
       "path": "apps/web/src/components/calendar/gutter-column.tsx",
-      "sha256": "a7765171b5cc269f6f95f0546e70a0afb3341e6284b8af5e132270eb021381eb"
+      "sha256": "5aaffd31e32fd006428f3afdf167ad0c877ed3f3439fb6c9c16fd1a28e369e31"
     },
     {
-      "bytes": 25238,
+      "bytes": 26434,
       "mode": 420,
       "path": "apps/web/src/components/calendar/lib.test.ts",
-      "sha256": "b41501775883ebc04860721f2e16b0c8b2c9b17fa09e8a0ed7685631372d1e25"
+      "sha256": "ca92ae92beab3c34b14744085d6bbec83825e0eb78a33fd18b5a721a70303679"
     },
     {
-      "bytes": 33238,
+      "bytes": 34031,
       "mode": 420,
       "path": "apps/web/src/components/calendar/lib.ts",
-      "sha256": "6aac04ba7d999c5b97051def690c4366676587c2e5e5519b0e5eae234835a3f3"
+      "sha256": "8fad14d6f1150208b39304ccf3503b728c63c8ed4c49c009730915769c241af6"
     },
     {
       "bytes": 6283,
@@ -8323,10 +8335,10 @@
       "sha256": "833d2a625b54e43a68b4adc39053d367eece07d5ce98d9e637e66b6e2f1bee99"
     },
     {
-      "bytes": 8425,
+      "bytes": 9347,
       "mode": 420,
       "path": "apps/web/src/components/calendar/panel-header.tsx",
-      "sha256": "4fd23f43172177e33aebacfc873adbc471be50709cd69e745e10e20e36af5a34"
+      "sha256": "3c7022c5fb39890eb8871f961d0472e0bedeb57bf94913a90fdf7f95435cd07b"
     },
     {
       "bytes": 1370,
@@ -8413,10 +8425,10 @@
       "sha256": "7c4c53b25841f96dd63171ef830a6236437fae71665c0c995b403503ff8b4676"
     },
     {
-      "bytes": 25373,
+      "bytes": 24841,
       "mode": 420,
       "path": "apps/web/src/components/calendar/time-strip.tsx",
-      "sha256": "15c99c5e0446f5c6bd2b03596328d2f786e22bda600ec7ec889aec417cbbb0b2"
+      "sha256": "c95de5d816f29f0afb3fe63978113c0d22878531506d8180495ffac1b0c36f6c"
     },
     {
       "bytes": 3605,
@@ -8461,10 +8473,10 @@
       "sha256": "35bd44573a18caf802196cf49fd88cabf163337bbfc4884c24580ddb74e78489"
     },
     {
-      "bytes": 11979,
+      "bytes": 12002,
       "mode": 420,
       "path": "apps/web/src/components/insights/insights-dashboard.tsx",
-      "sha256": "1ad32f8fceb0e8dac010d9dd01f5d1f5f09cde709c7526ef7376b66c7291a9f0"
+      "sha256": "3feea7fead257ff50133331db9fedf8f5603c7d0d7752543e12f76957b21eb40"
     },
     {
       "bytes": 1119,
@@ -8491,40 +8503,46 @@
       "sha256": "aea2d4325631020770e19249b709b260cfc80fadfb51cbda5b2bdd40135831ce"
     },
     {
-      "bytes": 733,
+      "bytes": 1081,
+      "mode": 420,
+      "path": "apps/web/src/components/settings/primary-colors.ts",
+      "sha256": "eb84245180f4f7428909a3e7854a74c32fecf837bfc5f2dab1d0ab6457bf2e6b"
+    },
+    {
+      "bytes": 722,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-group.tsx",
-      "sha256": "322fe82036a6c62721c789b2ac27b29f3d8e81b65a85631af7c6f8972492b886"
+      "sha256": "d13ffff7ed89b9d54602473d6d3547c13404b517593972aef7044e4ee810b61f"
     },
     {
-      "bytes": 1701,
+      "bytes": 1707,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-layout.test.ts",
-      "sha256": "44dad1a6b33a8ba74c1c0de3df0f67956ea14960becab44a58dc1dc821b4ef4e"
+      "sha256": "6755c0234121d3a6b6f92d2fb2a6c713d82377f36bc6269c5811c71475a5e4f7"
     },
     {
-      "bytes": 1843,
+      "bytes": 1844,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-layout.tsx",
-      "sha256": "72535e70fd9bbb114e2d9822d320125038b0c9831680b384a0265d3a54d0ff2f"
+      "sha256": "0a7e3446c2b8b92c796fb7a9afe1752dc7186b63e74659d0068c993f8625f659"
     },
     {
-      "bytes": 3814,
+      "bytes": 3817,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-navigation.test.ts",
-      "sha256": "0790342b75af5cdaf7e6e7e0908a09b78d89d824c294c3fdca08b2f25756df13"
+      "sha256": "97471faf83b6046bb8094ca1d4811c0e792ef4b5d76d116e9ecf1c57bbbd7bee"
     },
     {
-      "bytes": 6558,
+      "bytes": 6839,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-navigation.ts",
-      "sha256": "d72456e338fd139cd920df528daa18b97636a940a54746bb6a8d222b84aa5194"
+      "sha256": "9995b07192f53399472bfe7d22220818f4d0773767d111e10b5d04ef138fbf97"
     },
     {
-      "bytes": 3102,
+      "bytes": 3133,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-patch.test.ts",
-      "sha256": "f0214e013ecd3e91c070d8c6d766c13d6844cc8e4f7ebcc6f218f54cb42bba43"
+      "sha256": "b30ff822d50d35cd9634f2a2b4b72e9fd46fc51b4b7ce609b130330e916601cf"
     },
     {
       "bytes": 1665,
@@ -8551,10 +8569,10 @@
       "sha256": "48fce10ad8c98bb76eb2adf8ef6d5d8b1d0797b83a7f2522bb795569a76e6803"
     },
     {
-      "bytes": 6517,
+      "bytes": 6172,
       "mode": 420,
       "path": "apps/web/src/components/settings/settings-sidebar.tsx",
-      "sha256": "be76d983a1ea0111660c9384f5725d634b3d1189487a322c1050aff48388cba7"
+      "sha256": "a8525e32af652b0dd9dbbd32b6b05c24d5164942cc93a318e6af6abe560a8fb9"
     },
     {
       "bytes": 1556,
@@ -8599,10 +8617,10 @@
       "sha256": "bf73369e5bd4bc0a4aea623459b53d9cde5ef76c6d512a9a019023ecb1367fa3"
     },
     {
-      "bytes": 2019,
+      "bytes": 2486,
       "mode": 420,
       "path": "apps/web/src/components/theme-provider.tsx",
-      "sha256": "e1b1e67cd4848c88e89c0e2231be5051e66d58f947b8bf18356f42669f50d9c4"
+      "sha256": "6ef1c7ec7c9ff4a2f736f3e05fee55ed3b8720f917f9480d9c4a81ef2b52c00c"
     },
     {
       "bytes": 3997,
@@ -8617,10 +8635,10 @@
       "sha256": "c6b60a98f77c220dcfa2e795b95e8ca1d80de24fd592b7270b36324704ac3231"
     },
     {
-      "bytes": 8565,
+      "bytes": 8444,
       "mode": 420,
       "path": "apps/web/src/components/workspace/app-rail.tsx",
-      "sha256": "430a9da533f70f6595d4367a55892915b6cea650330e56ea6b4ef591c773571e"
+      "sha256": "63b4dba1f90e9e4b2286fd99a3c98e7aa8e3d44f15a3dbf5db9706f643e8b187"
     },
     {
       "bytes": 1041,
@@ -8725,10 +8743,10 @@
       "sha256": "1651e3dd3cdf2cc83ed3f888881af3a6c19c3050a9852e472f9a79ec563fb8cf"
     },
     {
-      "bytes": 4024,
+      "bytes": 4043,
       "mode": 420,
       "path": "apps/web/src/components/workspace/bottom-island.tsx",
-      "sha256": "8e51d8e008c3e36e39b67cade9ed0abb46bc528e395ae15f3f3e5fc8994740b8"
+      "sha256": "18abbbda6d4bd9b6de53db3273a061d9785f0a5b0bc0d609b179fa74e243f6a2"
     },
     {
       "bytes": 8384,
@@ -8779,28 +8797,28 @@
       "sha256": "19235c9c2182d507753dd2449242780d527a3e99a3bb0159a96e995d49bfa5c6"
     },
     {
-      "bytes": 1382,
+      "bytes": 1378,
       "mode": 420,
       "path": "apps/web/src/components/workspace/workspace-chrome.test.ts",
-      "sha256": "7bdeb865e19c78b2ccdc7212da67e52e6eee39203c2a05cf50c196f2a6d4522a"
+      "sha256": "86cc953e53433b6db04447a5ff6681d871ddcb64dfb95ab391711120864fc311"
     },
     {
-      "bytes": 3519,
+      "bytes": 2955,
       "mode": 420,
       "path": "apps/web/src/components/workspace/workspace-chrome.tsx",
-      "sha256": "bf6d1578a6cf884be89c851ebd8b7649e8049cbb6475c227141ae1e9bc015096"
+      "sha256": "7c8f878ef56732194bd2e2f4a495e554650c8fce8760fc1f13598688ebb22d51"
     },
     {
-      "bytes": 1335,
+      "bytes": 1336,
       "mode": 420,
       "path": "apps/web/src/components/workspace/workspace-layout.tsx",
-      "sha256": "c60df54a7391bf51a7d97bb7447cc19d66c823b61e2ff43c9eb82e2dcd11b247"
+      "sha256": "f70ab7addd0b2c8be36dacb8f30ce2a5bd6d9981817cd044707398e68fa3fb05"
     },
     {
-      "bytes": 3336,
+      "bytes": 3574,
       "mode": 420,
       "path": "apps/web/src/components/workspace/workspace-materials.test.ts",
-      "sha256": "f108aadfc6e21625d79d378a27f0b4f5188520d425641c767785312ea5329de2"
+      "sha256": "bc98d18d03e50fa021e5acd62f88f50de3dfd96d7a7b3283c6caa42db1327a29"
     },
     {
       "bytes": 2163,
@@ -8821,10 +8839,10 @@
       "sha256": "034a56ce579e3dd51411b46d76108b99f688a0fe320f159849b4a17a73e25123"
     },
     {
-      "bytes": 2696,
+      "bytes": 2757,
       "mode": 420,
       "path": "apps/web/src/components/workspace/workspace-utility-menu.tsx",
-      "sha256": "e9cd043e4146c3f3d2e3409bf2d1d7cb2a7917232aa8aa5ca6a0a57270fe813c"
+      "sha256": "c4a013d46964b076439423647fb4858c412494cea2ef14dc1da30e1aefc0948b"
     },
     {
       "bytes": 32,
@@ -8851,10 +8869,10 @@
       "sha256": "fcd142d74ee204d80829239bf4a41f6f9717a7f3c209a88896c413318042fb6c"
     },
     {
-      "bytes": 16860,
+      "bytes": 16900,
       "mode": 420,
       "path": "apps/web/src/lib/desktop/api.test.ts",
-      "sha256": "4701f0788c6af7fbad7581a8985e25ff72df9faabf6054d2daa77cfe99c86a5a"
+      "sha256": "459f0c30b736857b97d53807b8e4296052488c59207eb92f2639fd9843e41d79"
     },
     {
       "bytes": 8443,
@@ -8881,16 +8899,16 @@
       "sha256": "820a748397d7e1323ea12d10c3b346f73cab882695ef1c7af853333fb3d11736"
     },
     {
-      "bytes": 4221,
+      "bytes": 4252,
       "mode": 420,
       "path": "apps/web/src/lib/desktop/settings.test.ts",
-      "sha256": "57853a169a6485e411eb3c3b6a650df0baf11e22729e0f59bc7f9efe84babefe"
+      "sha256": "d3ca4bc36c46202d4073f05bc4a439503af0d6d186edfa98cd8d1e33dd8497bd"
     },
     {
-      "bytes": 4506,
+      "bytes": 4537,
       "mode": 420,
       "path": "apps/web/src/lib/desktop/settings.ts",
-      "sha256": "4c965f47464cece622c60caf5e86c04f1d4537427f881e67030471a3083bfd8f"
+      "sha256": "5cff87eab6a1e3e146765ce66d2da6ff36f09c4cbd67866397dfc5435dc0bd02"
     },
     {
       "bytes": 3697,
@@ -9013,10 +9031,10 @@
       "sha256": "d9b6c795bbdeb3b18d9cf95896dbe485b14fd80bf35c2f8713ef716d8c19ae55"
     },
     {
-      "bytes": 12354,
+      "bytes": 13644,
       "mode": 420,
       "path": "apps/web/src/routes/_workspace/settings/calendar.tsx",
-      "sha256": "463e0f8eef58c494f47c0c910f77749544f982443ea57a62cf24bea7530c3a9c"
+      "sha256": "19bcc35f09593ffa16699844dc381de08c9924aa8f74f42e7fe99f9c27b4d0f8"
     },
     {
       "bytes": 20767,
@@ -9691,16 +9709,16 @@
       "sha256": "4e56d4f35e479df48483ac4d60695113e74fcb1ccae4f51e116f8767a5c4fcd4"
     },
     {
-      "bytes": 21654,
+      "bytes": 22190,
       "mode": 420,
       "path": "packages/desktop-contracts/src/schemas.test.ts",
-      "sha256": "f9f299ff998e564a5bd23dec1ba7fc8391ef156435aef5ca5755ba8d62d72f94"
+      "sha256": "91efc971a3c2a9ebbe692f56de240a2104a5cfdd74c3d966cdd1078f5721390e"
     },
     {
-      "bytes": 29555,
+      "bytes": 29969,
       "mode": 420,
       "path": "packages/desktop-contracts/src/schemas.ts",
-      "sha256": "a0a5b3873ff8673a9142edf36db95a450a522b10290e18c68fe40e7f86bf30ed"
+      "sha256": "971becf89050cc0d802fe282c093223ab3d5ac27f2e75ba353d6c473dbce9f37"
     },
     {
       "bytes": 116,
@@ -9769,6 +9787,18 @@
       "sha256": "80887afede26bc861e92dbfbb17a775d769e46e7c84f336b1c9f17959f60606d"
     },
     {
+      "bytes": 4486,
+      "mode": 420,
+      "path": "packages/ui/src/assets/fonts/geist/GeistVariable-LICENSE.txt",
+      "sha256": "71609cbb5c78b5870d712eab73a31d76622635c6ed034ab5cee3b9ecbda8685f"
+    },
+    {
+      "bytes": 29400,
+      "mode": 420,
+      "path": "packages/ui/src/assets/fonts/geist/GeistVariable-Latin.woff2",
+      "sha256": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1"
+    },
+    {
       "bytes": 4368,
       "mode": 420,
       "path": "packages/ui/src/assets/fonts/geist/LICENSE.txt",
@@ -9805,10 +9835,10 @@
       "sha256": "6313e54ddb6fd62fadd61155a56a269fc93aa8505ed565a124610a0def3f5451"
     },
     {
-      "bytes": 3552,
+      "bytes": 3805,
       "mode": 420,
       "path": "packages/ui/src/components/button.tsx",
-      "sha256": "d969356bbde93ddd75d41b1dcd8e98f68f8646ee6ad04e2550a204f74d81144d"
+      "sha256": "6da6ec0702141fb5f27d06e942ac2ea98dcd370316b807855ac99b7673dbbd2f"
     },
     {
       "bytes": 3173,
@@ -9853,10 +9883,10 @@
       "sha256": "654453b76b0edfa8f3ce6751bf816a3a58f6ccb42f7aa39c8a6d1d382b4c4efa"
     },
     {
-      "bytes": 1736,
+      "bytes": 1685,
       "mode": 420,
       "path": "packages/ui/src/components/data-frame.tsx",
-      "sha256": "5f0d9cc1fde4fcb08112a7c012249e54af8257975e7b5836cbf36592a276bbf1"
+      "sha256": "1a891967e4d4bbe4e9b82f3e17a3be7dce468e7fc160daf941c50cffc14b47e7"
     },
     {
       "bytes": 1531,
@@ -9961,10 +9991,10 @@
       "sha256": "0ecc9b0a70f9f18f7f6d13c2d2a3f0a540fc8b6df7def071fc9d522e31f9f75e"
     },
     {
-      "bytes": 2575,
+      "bytes": 2685,
       "mode": 420,
       "path": "packages/ui/src/components/motion-dialog.tsx",
-      "sha256": "b5deb9f7762ba0a691e537246689d21d9d22c3d70800c3911225167ab0b57736"
+      "sha256": "54952bbeaa8b65631dcfe42dabbc987b6857237ede55dc367d9bfc78e9ea684c"
     },
     {
       "bytes": 20920,
@@ -10087,16 +10117,16 @@
       "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
     },
     {
-      "bytes": 35240,
+      "bytes": 42058,
       "mode": 420,
       "path": "packages/ui/src/styles/globals.css",
-      "sha256": "c48516e31386ee18ff9d1f90732211d2a0a52003ad80872d330991a46239f769"
+      "sha256": "48b1526007c8cb5719812a23aed14afc2a40d5b9ca58ef95709ae41abd4f0c65"
     },
     {
-      "bytes": 7255,
+      "bytes": 7271,
       "mode": 420,
       "path": "packages/ui/src/styles/globals.test.ts",
-      "sha256": "c415eaf66188631066f1c449a53e52f3db0889f80e25786204dc8589cff8a88e"
+      "sha256": "96da3ec291117a19107eb6fab2f27d95f72a193453aa78bbf4dd5cb7bd7af94a"
     },
     {
       "bytes": 296,

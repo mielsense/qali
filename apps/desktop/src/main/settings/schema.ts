@@ -79,6 +79,7 @@ export function createDefaultSettings(
       glassOpacity: 0.78,
       transparency: "follow-system",
       interfaceSounds: true,
+        primaryColor: "mauve",
     },
     keybindings: { overrides: {} },
   });

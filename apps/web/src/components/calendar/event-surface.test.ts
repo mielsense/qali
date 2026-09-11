@@ -28,21 +28,21 @@ describe("event surface presentation", () => {
     expect(allDay.radiusPx).toBe(8);
   });
 
-  test("uses an opaque calendar-color mixed fill, tinted hairline, and inset-only top highlight", () => {
+  test("uses an opaque calendar-color mixed fill, tinted hairline, and double inner edge and a small grounding shadow", () => {
     const surface = eventSurfacePresentation({
       colorVar: "--event-6",
       variant: "timed",
     });
 
     expect(surface.backgroundColor).toBe(
-      "color-mix(in oklab, var(--event-6) 30%, var(--card))",
+      "color-mix(in oklab, var(--event-6) 72%, var(--card))",
     );
     expect(surface.backgroundColor).not.toContain("transparent");
     expect(surface.borderColor).toBe(
-      "color-mix(in oklab, var(--event-6) 50%, var(--border))",
+      "color-mix(in oklab, var(--event-6) 82%, var(--border))",
     );
     expect(surface.boxShadow).toBe(
-      "inset 0 1px 0 color-mix(in oklab, white 42%, transparent)",
+      "inset 0 1px 0 rgb(255 255 255 / 0.48), inset 0 0 0 1px rgb(255 255 255 / 0.14), inset 0 -1px 0 rgb(0 0 0 / 0.08), 0 2px 3px rgb(0 0 0 / 0.14)",
     );
   });
 
@@ -78,7 +78,7 @@ describe("event surface presentation", () => {
     expect(disabled.color).toBe(idle.color);
   });
 
-  test("forbids exterior shadows, translation, left stripes, and hover movement", () => {
+  test("avoids translation, left stripes, and hover movement", () => {
     const surface = eventSurfacePresentation({
       colorVar: "--event-5",
       variant: "all-day",

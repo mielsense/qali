@@ -32,6 +32,7 @@ const validSettings = {
     glassOpacity: 0.78,
     transparency: "follow-system",
     interfaceSounds: true,
+        primaryColor: "mauve",
   },
   keybindings: {
     overrides: {
@@ -89,6 +90,16 @@ describe("settings and semantic command contracts", () => {
         appearance: { ...validSettings.appearance, interfaceSounds: "yes" },
       }).success,
     ).toBe(false);
+  });
+
+  test("migrates missing primary colors and rejects arbitrary CSS in patches", () => {
+    const { primaryColor: _missing, ...appearance } = validSettings.appearance;
+    expect(qaliSettingsDocumentSchema.parse({ ...validSettings, appearance }).appearance.primaryColor).toBe("mauve");
+    expect(() => parseIpcRequest("settings:patch", {
+      baseRevision: 0,
+      operationId: "invalid-accent",
+      changes: { appearance: { primaryColor: "url(https://invalid.example)" } },
+    })).toThrow();
   });
 
   test("defaults interface sounds on for settings written before the preference existed", () => {

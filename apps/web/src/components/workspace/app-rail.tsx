@@ -11,16 +11,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@qali/ui/components/tooltip";
-import { buttonVariants } from "@qali/ui/components/button";
 import { cn } from "@qali/ui/lib/utils";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Reorder, useDragControls, useReducedMotion } from "motion/react";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useState } from "react";
 
 import { useCommand, useCommandLabel } from "@/commands/command-provider";
 
 import { useDock } from "./dock-context";
 import { WorkspaceUtilityMenu } from "./workspace-utility-menu";
+
 import {
   DEFAULT_WORKSPACE_SECTION_ORDER,
   normalizeWorkspaceSectionOrder,
@@ -29,6 +29,10 @@ import {
   type WorkspaceSectionId,
   writeWorkspaceSectionOrder,
 } from "./workspace-sections";
+
+// Translated from Portal app-rail.svelte; selection and icon size follow Qali preferences.
+const railEntryClass =
+  "relative flex size-9 items-center justify-center rounded-lg transition-colors duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 type AppRailDestination = {
   id: WorkspaceSectionId;
@@ -105,40 +109,41 @@ export function AppRail() {
   return (
     <nav
       aria-label="Workspace"
-      className="flex h-full min-w-0 flex-col items-center px-2 pb-6 pt-3"
+      className="relative isolate flex h-full w-16 shrink-0 flex-col"
     >
-      <RailAction
-        label={createLabel ? `New event · ${createLabel}` : "New event"}
-        variant="accent"
-        onClick={openCreate}
-        icon={PlusSignIcon}
-      />
+      <div aria-hidden="true" className="h-12 shrink-0" />
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-1 px-2.5 py-3">
+        <RailAction
+          label={createLabel ? `New event · ${createLabel}` : "New event"}
+          onClick={openCreate}
+          icon={PlusSignIcon}
+        />
 
-      <div className="my-3 h-px w-full bg-border" />
+        <div aria-hidden="true" className="my-3 h-px w-6 bg-foreground/15" />
+        <Reorder.Group
+          as="ol"
+          axis="y"
+          values={order}
+          onReorder={persistOrder}
+          className="flex w-full flex-col gap-1"
+        >
+          {order.map((id, index) => {
+            const destination = APP_RAIL_DESTINATION_BY_ID[id];
+            return (
+              <AppRailItem
+                key={id}
+                id={id}
+                index={index}
+                destination={destination}
+                active={isAppRailDestinationActive(pathname, destination.to)}
+                onMove={moveSection}
+              />
+            );
+          })}
+        </Reorder.Group>
 
-      <Reorder.Group
-        as="ol"
-        axis="y"
-        values={order}
-        onReorder={persistOrder}
-        className="flex w-full flex-col gap-1"
-      >
-        {order.map((id, index) => {
-          const destination = APP_RAIL_DESTINATION_BY_ID[id];
-          return (
-            <AppRailItem
-              key={id}
-              id={id}
-              index={index}
-              destination={destination}
-              active={isAppRailDestinationActive(pathname, destination.to)}
-              onMove={moveSection}
-            />
-          );
-        })}
-      </Reorder.Group>
-
-      <div className="mt-auto flex w-full flex-col items-center gap-1">
+        <div className="flex-1" />
+        <div className="my-1.5 h-px w-6 bg-sidebar-border" />
         <WorkspaceUtilityMenu />
       </div>
     </nav>
@@ -179,7 +184,7 @@ function AppRailItem({
       dragControls={dragControls}
       whileDrag={reducedMotion ? undefined : { scale: 1.035 }}
       transition={reducedMotion ? { duration: 0 } : { duration: 0.18 }}
-      className="group/rail-item relative flex h-12 w-full items-center justify-center"
+      className="group/rail-item relative flex h-[36px] w-full items-center justify-center"
     >
       <Tooltip>
         <TooltipTrigger
@@ -189,13 +194,10 @@ function AppRailItem({
               aria-current={active ? "page" : undefined}
               aria-label={tooltip}
               className={cn(
-                buttonVariants({
-                  variant: active ? "raised" : "quiet",
-                  size: "icon-lg",
-                }),
-                "relative text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                active &&
-                  "border-[var(--qali-glass-edge-firm)] text-foreground",
+                railEntryClass,
+                active
+                  ? "text-foreground dark:text-white"
+                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
               )}
             />
           }
@@ -203,7 +205,7 @@ function AppRailItem({
           <HugeiconsIcon
             icon={destination.icon as IconSvgElement}
             strokeWidth={1.8}
-            className="size-5"
+            className="size-[22px]"
             aria-hidden="true"
           />
         </TooltipTrigger>
@@ -231,7 +233,7 @@ function AppRailItem({
             onMove(id, 1);
           }
         }}
-        className="absolute right-0 flex size-5 touch-none items-center justify-center rounded-md text-muted-foreground/35 opacity-0 outline-none transition-opacity group-hover/rail-item:opacity-100 hover:text-muted-foreground focus-visible:opacity-100 focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+        className="absolute -right-2.5 flex h-5 w-3 touch-none items-center justify-center rounded-md text-muted-foreground/35 opacity-0 outline-none transition-opacity hover:text-muted-foreground focus-visible:opacity-100 focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >
         <HugeiconsIcon
           icon={DragDropVerticalIcon}
@@ -246,37 +248,21 @@ function AppRailItem({
 
 function RailAction({
   label,
-  active,
-  variant = "quiet",
   icon,
-  glyph,
   onClick,
 }: {
   label: string;
-  active?: boolean;
-  variant?: "quiet" | "accent";
-  icon?: IconSvgElement;
-  glyph?: ReactNode;
+  icon: IconSvgElement;
   onClick: () => void;
 }) {
   const button = (
     <button
       type="button"
       aria-label={label}
-      aria-pressed={active || undefined}
       onClick={onClick}
-      className={cn(
-        buttonVariants({
-          variant:
-            variant === "accent" ? "accent" : active ? "raised" : "quiet",
-          size: "icon-lg",
-        }),
-      )}
+      className={cn(railEntryClass, "text-foreground hover:bg-foreground/5")}
     >
-      {glyph ??
-        (icon ? (
-          <HugeiconsIcon icon={icon} strokeWidth={1.9} className="size-5" />
-        ) : null)}
+      <HugeiconsIcon icon={icon} strokeWidth={1.9} className="size-[22px]" />
     </button>
   );
 

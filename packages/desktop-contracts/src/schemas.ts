@@ -111,6 +111,15 @@ export type QaliSettingsDocument = Readonly<{
   }>;
   appearance: Readonly<{
     theme: "system" | "light" | "dark";
+    primaryColor:
+      | "mauve"
+      | "blue"
+      | "teal"
+      | "green"
+      | "peach"
+      | "pink"
+      | "red"
+      | "lavender";
     glassOpacity: number;
     transparency: "follow-system" | "always-reduce";
     interfaceSounds: boolean;
@@ -151,6 +160,7 @@ export type SettingsResetTarget =
   | "calendar.primaryTimeZone"
   | "calendar.secondaryTimeZones"
   | "calendar.defaultCalendarId"
+  | "appearance.primaryColor"
   | "appearance.theme"
   | "appearance.glassOpacity"
   | "appearance.transparency"
@@ -344,6 +354,16 @@ const calendarSettingsSchema = z
 
 const appearanceSettingsShape = {
   theme: z.enum(["system", "light", "dark"]),
+  primaryColor: z.enum([
+    "mauve",
+    "blue",
+    "teal",
+    "green",
+    "peach",
+    "pink",
+    "red",
+    "lavender",
+  ]),
   glassOpacity: z.number().min(0.6).max(0.95),
   transparency: z.enum(["follow-system", "always-reduce"]),
   interfaceSounds: z.boolean(),
@@ -355,6 +375,7 @@ const appearanceSettingsSchema = z
     ...appearanceSettingsShape,
     // Older schema-v2 files predate this additive preference.
     interfaceSounds: z.boolean().default(true),
+    primaryColor: appearanceSettingsShape.primaryColor.default("mauve"),
   })
   .strict();
 
@@ -426,6 +447,7 @@ export const settingsResetRequestSchema = z
       "calendar.secondaryTimeZones",
       "calendar.defaultCalendarId",
       "appearance.theme",
+      "appearance.primaryColor",
       "appearance.glassOpacity",
       "appearance.transparency",
       "appearance.interfaceSounds",

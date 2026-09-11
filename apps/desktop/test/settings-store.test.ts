@@ -55,6 +55,7 @@ describe("main-owned settings store", () => {
           glassOpacity: 0.78,
           transparency: "follow-system",
           interfaceSounds: true,
+          primaryColor: "mauve",
         },
         keybindings: { overrides: {} },
       }),
@@ -71,6 +72,27 @@ describe("main-owned settings store", () => {
     expect(reopened.snapshot().settings.calendar.primaryTimeZone).toBe(
       "America/New_York",
     );
+    await reopened.close();
+  });
+
+  test("persists and resets the primary color across restart", async () => {
+    const configRoot = await makeConfigRoot();
+    const store = await openSettingsStore({ configRoot, systemTimeZone: "UTC" });
+    const result = await store.patch({
+      baseRevision: 0,
+      operationId: "choose-primary-color",
+      changes: { appearance: { primaryColor: "teal" } },
+    });
+    expect(result.snapshot.settings.appearance.primaryColor).toBe("teal");
+    await store.close();
+    const reopened = await openSettingsStore({ configRoot, systemTimeZone: "UTC" });
+    expect(reopened.snapshot().settings.appearance.primaryColor).toBe("teal");
+    const reset = await reopened.reset({
+      baseRevision: reopened.snapshot().settings.revision,
+      operationId: "reset-primary-color",
+      target: "appearance.primaryColor",
+    });
+    expect(reset.snapshot.settings.appearance.primaryColor).toBe("mauve");
     await reopened.close();
   });
 

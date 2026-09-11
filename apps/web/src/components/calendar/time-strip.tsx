@@ -498,14 +498,11 @@ export const TimeStrip = forwardRef<TimeStripHandle, TimeStripProps>(
       () => layoutAllDayEvents(days, allDayEvents, startIdx, visibleEndIdx),
       [days, allDayEvents, startIdx, visibleEndIdx],
     );
-    const visibleRangeKey = `${days[startIdx]?.getTime() ?? 0}:${columns}`;
-    const [expandedAllDayRange, setExpandedAllDayRange] = useState<string>();
-    const allDayExpanded = expandedAllDayRange === visibleRangeKey;
+    const allDayExpanded = false;
     const { laneCount: visibleAllDayLaneCount } = useMemo(
       () => visibleAllDayMetrics(allDayLayout, startIdx, visibleEndIdx),
       [allDayLayout, startIdx, visibleEndIdx],
     );
-    const hiddenEventCount = allDayLayout.filter(({ lane }) => lane >= 1).length;
     const allDayMetrics = allDayBandMetrics({
       laneCount: visibleAllDayLaneCount,
       expanded: allDayExpanded,
@@ -591,13 +588,6 @@ export const TimeStrip = forwardRef<TimeStripHandle, TimeStripProps>(
         >
           <GutterColumn
             allDayHeight={allDayHeight}
-            allDayExpanded={allDayExpanded}
-            hiddenAllDayEventCount={hiddenEventCount}
-            onToggleAllDay={() =>
-              setExpandedAllDayRange(
-                allDayExpanded ? undefined : visibleRangeKey,
-              )
-            }
             now={now}
             timeRange={timeRange}
             hourHeight={hourHeight}

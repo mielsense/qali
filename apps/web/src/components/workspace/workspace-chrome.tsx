@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useState,
-  type CSSProperties,
   type ReactNode,
 } from "react";
 
@@ -27,21 +26,22 @@ export function commitWorkspaceHeaderTarget(
 }
 
 export const WORKSPACE_CHROME_GEOMETRY = {
-  headerHeight: 56,
-  railWidth: 84,
-  railContentStart: 56,
+  headerHeight: 48,
+  railWidth: 64,
+  railContentStart: 48,
   // Gives the native traffic-light zone (about 78px) plus breathing room for
   // date controls. The platform CSS applies this to the draggable toolbar.
   trafficLightSafeInset: 96,
-  chromeSurface: "calendar-background",
-  singleSurface: true,
-  geometricLinework: true,
+  chromeSurface: "frosted-glass",
+  singleSurface: false,
+  geometricLinework: false,
+  contentInset: 8,
+  contentRadius: 20,
 } as const;
 
 /**
- * The connected L-shaped shell uses the same opaque background token as the
- * calendar canvas. Separator lines carry the structure without introducing a
- * second material or color plane.
+ * One frosted material connects the navigation rail and toolbar. The calendar
+ * owns its opaque canvas; reduced transparency resolves the shell to opaque.
  */
 export function WorkspaceChrome({ children }: { children: ReactNode }) {
   const { headerHeight, railWidth } = WORKSPACE_CHROME_GEOMETRY;
@@ -65,25 +65,9 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 bg-background"
-          style={{
-            clipPath: `polygon(0 0, 100% 0, 100% ${headerHeight}px, ${railWidth}px ${headerHeight}px, ${railWidth}px 100%, 0 100%)`,
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="qali-shell-linework pointer-events-none absolute inset-0 z-[1]"
-          style={
-            {
-              "--qali-shell-header": `${headerHeight}px`,
-              "--qali-shell-rail": `${railWidth}px`,
-            } as CSSProperties
-          }
-        />
+        <div aria-hidden="true" className="qali-shell-material pointer-events-none absolute inset-0 z-0" />
 
-        <div className="relative z-10 col-start-1 row-start-2 min-h-0">
+        <div className="relative z-10 col-start-1 row-start-1 row-span-2 min-h-0">
           <AppRail />
         </div>
 
@@ -96,7 +80,7 @@ export function WorkspaceChrome({ children }: { children: ReactNode }) {
         <main
           id="workspace-main"
           tabIndex={-1}
-          className="relative z-10 col-start-2 row-start-2 min-h-0 min-w-0 overflow-hidden focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-ring"
+          className="qali-workspace-inset relative z-10 col-start-2 row-start-2 min-h-0 min-w-0 overflow-hidden outline-none"
         >
           {children}
         </main>

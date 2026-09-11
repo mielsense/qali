@@ -22,13 +22,13 @@ const SURFACE_STATE_CONTRAST: Record<
   EventSurfaceState,
   { fillPercent: number; edgePercent: number }
 > = {
-  idle: { fillPercent: 30, edgePercent: 50 },
-  hover: { fillPercent: 34, edgePercent: 58 },
-  focus: { fillPercent: 34, edgePercent: 64 },
-  dragging: { fillPercent: 38, edgePercent: 70 },
-  disabled: { fillPercent: 22, edgePercent: 36 },
-  conflict: { fillPercent: 38, edgePercent: 70 },
-  "read-only": { fillPercent: 32, edgePercent: 56 },
+  idle: { fillPercent: 72, edgePercent: 82 },
+  hover: { fillPercent: 78, edgePercent: 88 },
+  focus: { fillPercent: 78, edgePercent: 94 },
+  dragging: { fillPercent: 84, edgePercent: 96 },
+  disabled: { fillPercent: 58, edgePercent: 70 },
+  conflict: { fillPercent: 84, edgePercent: 96 },
+  "read-only": { fillPercent: 74, edgePercent: 86 },
 };
 
 export interface EventSurfacePresentation {
@@ -87,8 +87,8 @@ export function eventSurfacePresentation({
     backgroundColor: `color-mix(in oklab, var(${colorVar}) ${fillPercent}%, var(--card))`,
     borderColor: `color-mix(in oklab, var(${colorVar}) ${edgePercent}%, var(--border))`,
     boxShadow:
-      "inset 0 1px 0 color-mix(in oklab, white 42%, transparent)",
-    color: "var(--foreground)",
+      "inset 0 1px 0 rgb(255 255 255 / 0.48), inset 0 0 0 1px rgb(255 255 255 / 0.14), inset 0 -1px 0 rgb(0 0 0 / 0.08), 0 2px 3px rgb(0 0 0 / 0.14)",
+    color: "var(--event-ink)",
     hoverTransform: "none",
   };
 }

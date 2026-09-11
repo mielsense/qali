@@ -34,14 +34,15 @@ export function WorkspaceUtilityMenu() {
         render={
           <Button
             type="button"
-            variant="quiet"
-            size="icon-lg"
+            variant="ghost"
+            size="icon"
+            className="size-[36px] rounded-lg shadow-none"
             aria-label="Workspace menu"
             title="Workspace menu"
           />
         }
       >
-        <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={1.9} className="size-5" />
+        <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={1.9} className="size-[22px]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" sideOffset={10} className="w-56">
         <DropdownMenuGroup>

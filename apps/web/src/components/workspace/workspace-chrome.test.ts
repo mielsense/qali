@@ -10,12 +10,12 @@ import {
 describe("workspace chrome geometry", () => {
   test("forms one compact header-and-rail shell around the route content", () => {
     expect(WORKSPACE_CHROME_GEOMETRY).toMatchObject({
-      headerHeight: 56,
-      railWidth: 84,
-      railContentStart: 56,
-      chromeSurface: "calendar-background",
-      singleSurface: true,
-      geometricLinework: true,
+      headerHeight: 48,
+      railWidth: 64,
+      railContentStart: 48,
+      chromeSurface: "frosted-glass",
+      singleSurface: false,
+      geometricLinework: false,
     });
   });
 

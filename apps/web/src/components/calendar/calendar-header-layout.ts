@@ -1,3 +1,4 @@
+import { ALLDAY_COLLAPSED_LANES, ALLDAY_MAX_EXPANDED_LANES, allDayBandHeight } from "./lib";
 import type { ZonedCalendarClock } from "./zoned-calendar-clock";
 
 export const CALENDAR_HEADER_LAYOUT = Object.freeze({
@@ -13,7 +14,7 @@ export const CALENDAR_HEADER_LAYOUT = Object.freeze({
 });
 
 export const ALL_DAY_ROW_HEIGHT = 36;
-export const MAX_EXPANDED_ALL_DAY_ROWS = 3;
+export const MAX_EXPANDED_ALL_DAY_ROWS = ALLDAY_MAX_EXPANDED_LANES;
 export const TIME_ZONE_GUTTER_WIDTH = 48;
 export const TIME_ZONE_GUTTER_PADDING = 6;
 
@@ -24,7 +25,7 @@ export function allDayBandMetrics({
   laneCount: number;
   expanded: boolean;
 }): Readonly<{
-  visibleRows: 1 | 2 | 3;
+  visibleRows: number;
   height: number;
   internallyScrollable: boolean;
 }> {
@@ -35,11 +36,11 @@ export function allDayBandMetrics({
     return { visibleRows: 1, height: 0, internallyScrollable: false };
   }
   const visibleRows = (
-    expanded ? Math.min(laneCount, MAX_EXPANDED_ALL_DAY_ROWS) : 1
-  ) as 1 | 2 | 3;
+    Math.min(laneCount, expanded ? MAX_EXPANDED_ALL_DAY_ROWS : ALLDAY_COLLAPSED_LANES)
+  );
   return {
     visibleRows,
-    height: visibleRows * ALL_DAY_ROW_HEIGHT,
+    height: allDayBandHeight(laneCount, expanded),
     internallyScrollable: expanded && laneCount > MAX_EXPANDED_ALL_DAY_ROWS,
   };
 }

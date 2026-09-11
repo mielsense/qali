@@ -21,7 +21,7 @@ export function SettingsLayout() {
   }, [hash]);
   const header = (
     <header
-      className="flex h-full items-stretch bg-background"
+      className="flex h-full items-stretch bg-transparent"
       style={{ WebkitAppRegion: "drag" } as CSSProperties}
     >
       <div className="settings-sidebar-header flex w-[252px] shrink-0 items-center border-e border-border px-4">

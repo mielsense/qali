@@ -10,6 +10,8 @@ import {
 
 import { useQaliSettings } from "@/components/settings/settings-provider";
 
+import { primaryColorValue } from "./settings/primary-colors";
+
 type Theme = "system" | "light" | "dark";
 
 type ThemeContextValue = Readonly<{
@@ -22,7 +24,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { snapshot, patch } = useQaliSettings();
-  const theme = snapshot.settings.appearance.theme;
+  const { theme, primaryColor } = snapshot.settings.appearance;
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -41,7 +43,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(resolvedTheme);
     document.documentElement.style.colorScheme = resolvedTheme;
-  }, [resolvedTheme]);
+    document.documentElement.style.setProperty(
+      "--qali-accent",
+      primaryColorValue(primaryColor, resolvedTheme),
+    );
+    document.documentElement.style.setProperty(
+      "--qali-accent-foreground",
+      resolvedTheme === "dark" ||
+        ["green", "peach", "pink", "lavender"].includes(primaryColor)
+        ? "oklch(0.2 0.025 270)"
+        : "white",
+    );
+  }, [resolvedTheme, primaryColor]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({

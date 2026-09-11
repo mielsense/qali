@@ -5,6 +5,15 @@
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
+/* Portal's Geist typeface, bundled locally for offline desktop rendering. */
+@font-face {
+  font-family: "Geist Variable";
+  src: url("../assets/fonts/geist/GeistVariable-Latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @font-face {
   font-family: "Geist Pixel Square";
   src: url("../assets/fonts/geist/GeistPixel-Square.woff2") format("woff2");
@@ -37,19 +46,27 @@
 }
 
 :root {
-  --qali-accent: #b24b3d;
+  --sidebar-background: oklch(0.91 0.008 260);
+  --inner-highlight: rgb(255 255 255 / 0.7);
+  --inner-shade: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --shadow-soft: rgb(76 79 105 / 0.16);
+  --accent-highlight: rgb(255 255 255 / 0.22);
+  --accent-shade: rgb(0 0 0 / 0.16);
+  --accent-shadow: color-mix(in srgb, var(--primary) 24%, transparent);
+  --qali-accent: #8839ef;
+  --qali-accent-foreground: white;
+  --event-ink: oklch(0.23 0.025 270);
   --qali-accent-hover: color-mix(in oklch, var(--qali-accent) 90%, white);
   --qali-accent-active: color-mix(in oklch, var(--qali-accent) 88%, black);
   --qali-accent-border: color-mix(in oklch, var(--qali-accent) 76%, black);
   --qali-accent-focus: color-mix(in oklch, var(--qali-accent) 68%, transparent);
-  --qali-surface-raised-opaque: oklch(98% 0 0);
-  /* OA depth model. Every reusable surface chooses one of these roles; pages
-   * do not invent their own backgrounds or shadow stacks. */
-  --qali-surface-canvas: oklch(99% 0 0);
-  --qali-surface-flat: oklch(97.8% 0 0);
-  --qali-surface-raised: oklch(99.4% 0 0);
-  --qali-surface-floating: oklch(98.8% 0 0);
-  --qali-surface-inset: oklch(95.8% 0 0);
+  --qali-surface-raised-opaque: var(--popover);
+  /* Qali aliases resolve to the translated Portal surface tokens. */
+  --qali-surface-canvas: var(--background);
+  --qali-surface-flat: var(--card);
+  --qali-surface-raised: var(--popover);
+  --qali-surface-floating: var(--popover);
+  --qali-surface-inset: var(--sidebar);
   --qali-edge-subtle: oklch(13% 0 0 / 0.065);
   --qali-edge-strong: oklch(13% 0 0 / 0.11);
   --qali-goo-fill: var(--popover);
@@ -88,38 +105,34 @@
   --qali-motion-exit: 110ms;
   --qali-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --qali-ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --qali-shadow-attached:
-    inset 1px 1px 0 var(--qali-edge-highlight), 0 1px 2px oklch(0 0 0 / 0.08),
-    0 0 0 1px var(--qali-control-edge);
+  --qali-shadow-attached: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-popover:
     inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 6px oklch(0 0 0 / 0.07),
     0 12px 28px oklch(0 0 0 / 0.12), 0 0 0 1px var(--qali-glass-edge);
-  --qali-shadow-control:
-    inset 0 1px 0 rgb(255 255 255 / 0.72), 0 1px 2px rgb(0 0 0 / 0.08),
-    0 0 0 1px var(--qali-edge-subtle);
+  --qali-shadow-control: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-float:
     inset 0 1px 0 rgb(255 255 255 / 0.64), 0 2px 5px rgb(0 0 0 / 0.08),
     0 18px 42px rgb(0 0 0 / 0.12), 0 0 0 1px var(--qali-edge-subtle);
   --qali-goo-shadow: drop-shadow(0 2px 3px oklch(0 0 0 / 0.1))
     drop-shadow(0 12px 24px oklch(0 0 0 / 0.12));
-  --background: oklch(99% 0 0);
-  --foreground: oklch(13% 0 0);
-  --card: oklch(97% 0 0);
-  --card-foreground: oklch(13% 0 0);
-  --popover: oklch(97% 0 0);
-  --popover-foreground: oklch(13% 0 0);
-  --primary: oklch(13% 0 0);
-  --primary-foreground: oklch(99% 0 0);
-  --secondary: oklch(97% 0 0);
-  --secondary-foreground: oklch(13% 0 0);
-  --muted: oklch(97% 0 0);
-  --muted-foreground: oklch(47% 0 0);
-  --accent: oklch(94% 0 0);
-  --accent-foreground: oklch(13% 0 0);
-  --calendar-header: oklch(98.2% 0 0);
+  --background: oklch(0.95 0.007 260);
+  --foreground: oklch(0.3 0.03 260);
+  --card: oklch(0.93 0.007 260);
+  --card-foreground: oklch(0.3 0.03 260);
+  --popover: oklch(0.95 0.007 260);
+  --popover-foreground: oklch(0.3 0.03 260);
+  --primary: var(--qali-accent);
+  --primary-foreground: var(--qali-accent-foreground);
+  --secondary: oklch(0.9 0.008 260);
+  --secondary-foreground: oklch(0.3 0.03 260);
+  --muted: oklch(0.86 0.012 260);
+  --muted-foreground: oklch(0.55 0.02 260);
+  --accent: oklch(0.88 0.03 295);
+  --accent-foreground: oklch(0.35 0.05 295);
+  --calendar-header: var(--background);
   --destructive: oklch(62% 0.22 25);
-  --border: oklch(13% 0 0 / 0.06);
-  --input: oklch(13% 0 0 / 0.06);
+  --border: oklch(0.88 0.008 260);
+  --input: oklch(0.88 0.008 260);
   --ring: oklch(13% 0 0 / 0.12);
   /* Link accent — the one hue in an otherwise monochrome palette, so links read
    * as distinct from plain underlined text. */
@@ -133,14 +146,14 @@
    * onto these hues so the grid stays tonally consistent. See
    * apps/web/src/components/calendar/colors.ts. */
   --event-neutral: oklch(0.68 0.02 250);
-  --event-1: oklch(0.72 0.15 20);
-  --event-2: oklch(0.74 0.15 50);
-  --event-3: oklch(0.8 0.13 90);
-  --event-4: oklch(0.75 0.15 150);
-  --event-5: oklch(0.76 0.12 195);
-  --event-6: oklch(0.72 0.14 240);
-  --event-7: oklch(0.7 0.15 285);
-  --event-8: oklch(0.7 0.16 325);
+  --event-1: #f38ba8;
+  --event-2: #fab387;
+  --event-3: #f9e2af;
+  --event-4: #a6e3a1;
+  --event-5: #94e2d5;
+  --event-6: #89b4fa;
+  --event-7: #cba6f7;
+  --event-8: #f5c2e7;
   /* Chroma band — the saturated hues that sweep across text on reveal (the
    * marketing hero title and the assistant panel's streaming chunks). Kept as
    * tokens so the gradient reads from one source of truth and can be retuned in
@@ -151,73 +164,76 @@
   --chroma-4: #e1e1fe;
   --chroma-5: #0358f7;
   --radius: 0.625rem;
-  --sidebar: oklch(97% 0 0);
-  --sidebar-foreground: oklch(13% 0 0);
+  --sidebar: oklch(0.93 0.007 260);
+  --sidebar-foreground: oklch(0.3 0.03 260);
   --sidebar-primary: oklch(13% 0 0);
   --sidebar-primary-foreground: oklch(99% 0 0);
-  --sidebar-accent: oklch(94% 0 0);
-  --sidebar-accent-foreground: oklch(13% 0 0);
-  --sidebar-border: oklch(13% 0 0 / 0.06);
+  --sidebar-accent: oklch(0.9 0.02 295);
+  --sidebar-accent-foreground: oklch(0.35 0.05 295);
+  --sidebar-border: oklch(0.88 0.008 260);
   --sidebar-ring: oklch(13% 0 0 / 0.12);
 }
 
 .dark {
-  --qali-surface-raised-opaque: #202020;
-  --qali-surface-canvas: #111111;
-  --qali-surface-flat: #161616;
-  --qali-surface-raised: #1d1d1d;
-  --qali-surface-floating: #202020;
-  --qali-surface-inset: #0d0d0d;
+  --sidebar-background: oklch(0.14 0.008 295);
+  --inner-highlight: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --inner-shade: color-mix(in srgb, var(--background) 30%, transparent);
+  --shadow-soft: rgb(0 0 0 / 0.4);
+  --accent-highlight: rgb(255 255 255 / 0.18);
+  --accent-shade: rgb(0 0 0 / 0.22);
+  --accent-shadow: color-mix(in srgb, var(--primary) 26%, transparent);
+  --qali-surface-raised-opaque: var(--popover);
+  --qali-surface-canvas: var(--background);
+  --qali-surface-flat: var(--card);
+  --qali-surface-raised: var(--popover);
+  --qali-surface-floating: var(--popover);
+  --qali-surface-inset: var(--sidebar);
   --qali-edge-subtle: rgb(255 255 255 / 0.055);
   --qali-edge-strong: rgb(255 255 255 / 0.1);
-  --qali-goo-fill: #202020;
-  --qali-goo-control-fill: #292929;
-  --qali-glass-raised-surface: #2c2c2c;
-  --qali-glass-surface: color-mix(in srgb, #202020 68%, transparent);
+  --qali-goo-fill: oklch(0.22 0.009 295);
+  --qali-goo-control-fill: oklch(0.27 0.009 295);
+  --qali-glass-raised-surface: oklch(0.28 0.016 295);
+  --qali-glass-surface: color-mix(in srgb, oklch(0.22 0.009 295) 68%, transparent);
   --qali-glass-panel-surface: color-mix(
     in srgb,
     var(--qali-glass-raised-surface) var(--qali-glass-opacity),
     transparent
   );
-  --qali-glass-control-surface: color-mix(in srgb, #2c2c2c 72%, transparent);
+  --qali-glass-control-surface: color-mix(in srgb, oklch(0.28 0.016 295) 72%, transparent);
   --qali-glass-edge: rgb(255 255 255 / 0.07);
   --qali-glass-edge-firm: rgb(255 255 255 / 0.12);
   --qali-edge-highlight: rgb(255 255 255 / 0.06);
   --qali-control-edge: rgb(255 255 255 / 0.07);
   --qali-glass-blur: 16px;
   --qali-glass-saturation: 1.08;
-  --qali-shadow-attached:
-    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 4px oklch(0 0 0 / 0.38),
-    0 0 0 1px var(--qali-control-edge);
+  --qali-shadow-attached: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-popover:
     inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 8px oklch(0 0 0 / 0.34),
     0 16px 34px oklch(0 0 0 / 0.48), 0 0 0 1px var(--qali-glass-edge);
-  --qali-shadow-control:
-    inset 0 1px 0 rgb(255 255 255 / 0.085), 0 2px 4px rgb(0 0 0 / 0.42),
-    0 0 0 1px var(--qali-edge-subtle);
+  --qali-shadow-control: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-float:
     inset 0 1px 0 rgb(255 255 255 / 0.08), 0 3px 8px rgb(0 0 0 / 0.38),
     0 20px 48px rgb(0 0 0 / 0.5), 0 0 0 1px var(--qali-edge-subtle);
   --qali-goo-shadow: drop-shadow(0 2px 4px oklch(0 0 0 / 0.4))
     drop-shadow(0 16px 30px oklch(0 0 0 / 0.46));
-  --background: #111111;
-  --foreground: oklch(96% 0 0);
-  --card: #1b1b1b;
-  --card-foreground: oklch(96% 0 0);
-  --popover: #1b1b1b;
-  --popover-foreground: oklch(96% 0 0);
-  --primary: oklch(96% 0 0);
-  --primary-foreground: #111111;
-  --secondary: #1b1b1b;
-  --secondary-foreground: oklch(96% 0 0);
-  --muted: #1b1b1b;
-  --muted-foreground: oklch(62% 0 0);
-  --accent: oklch(28% 0 0);
-  --accent-foreground: oklch(96% 0 0);
-  --calendar-header: #0e0e0e;
+  --background: #121414;
+  --foreground: oklch(0.92 0.003 295);
+  --card: oklch(0.22 0.007 295);
+  --card-foreground: oklch(0.92 0.003 295);
+  --popover: oklch(0.22 0.009 295);
+  --popover-foreground: oklch(0.92 0.003 295);
+  --primary: var(--qali-accent);
+  --primary-foreground: var(--qali-accent-foreground);
+  --secondary: oklch(0.26 0.009 295);
+  --secondary-foreground: oklch(0.92 0.003 295);
+  --muted: oklch(0.28 0.016 295);
+  --muted-foreground: oklch(0.74 0.006 295);
+  --accent: oklch(0.28 0.017 295);
+  --accent-foreground: oklch(0.92 0.008 295);
+  --calendar-header: var(--background);
   --destructive: oklch(62% 0.22 25);
-  --border: rgb(255 255 255 / 0.05);
-  --input: rgb(255 255 255 / 0.05);
+  --border: oklch(0.3 0.011 295);
+  --input: oklch(0.3 0.011 295);
   --ring: rgb(255 255 255 / 0.1);
   --link: oklch(0.72 0.15 255);
   --chart-1: color-mix(in oklch, var(--qali-accent) 84%, white);
@@ -226,21 +242,21 @@
   --chart-4: oklch(0.44 0 0);
   --chart-5: oklch(0.3 0 0);
   --event-neutral: oklch(0.68 0.02 250);
-  --event-1: oklch(0.72 0.15 20);
-  --event-2: oklch(0.74 0.15 50);
-  --event-3: oklch(0.8 0.13 90);
-  --event-4: oklch(0.75 0.15 150);
-  --event-5: oklch(0.76 0.12 195);
-  --event-6: oklch(0.72 0.14 240);
-  --event-7: oklch(0.7 0.15 285);
-  --event-8: oklch(0.7 0.16 325);
-  --sidebar: #1b1b1b;
-  --sidebar-foreground: oklch(96% 0 0);
-  --sidebar-primary: oklch(96% 0 0);
-  --sidebar-primary-foreground: #111111;
-  --sidebar-accent: oklch(28% 0 0);
-  --sidebar-accent-foreground: oklch(96% 0 0);
-  --sidebar-border: rgb(255 255 255 / 0.05);
+  --event-1: #f38ba8;
+  --event-2: #fab387;
+  --event-3: #f9e2af;
+  --event-4: #a6e3a1;
+  --event-5: #94e2d5;
+  --event-6: #89b4fa;
+  --event-7: #cba6f7;
+  --event-8: #f5c2e7;
+  --sidebar: oklch(0.16 0.008 295);
+  --sidebar-foreground: oklch(0.92 0.003 295);
+  --sidebar-primary: oklch(0.92 0.003 295);
+  --sidebar-primary-foreground: oklch(0.18 0.007 295);
+  --sidebar-accent: oklch(0.28 0.017 295);
+  --sidebar-accent-foreground: oklch(0.92 0.008 295);
+  --sidebar-border: oklch(0.24 0.01 295);
   --sidebar-ring: rgb(255 255 255 / 0.1);
 }
 
@@ -248,7 +264,7 @@
  * These fills deliberately reveal that material; hosted web keeps the denser
  * fallback above because there is no operating-system layer underneath it. */
 html[data-qali-desktop].light {
-  --qali-glass-surface: rgb(248 248 248 / 0.54);
+  --qali-glass-surface: color-mix(in srgb, var(--sidebar-background) 50%, transparent);
   --qali-glass-panel-surface: rgb(255 255 255 / 0.64);
   --qali-glass-control-surface: rgb(255 255 255 / 0.48);
   --qali-glass-blur: 24px;
@@ -256,7 +272,7 @@ html[data-qali-desktop].light {
 }
 
 html[data-qali-desktop].dark {
-  --qali-glass-surface: rgb(24 24 24 / 0.46);
+  --qali-glass-surface: color-mix(in srgb, var(--sidebar-background) 50%, transparent);
   --qali-glass-panel-surface: rgb(34 34 34 / 0.56);
   --qali-glass-control-surface: rgb(54 54 54 / 0.42);
   --qali-glass-blur: 24px;
@@ -264,12 +280,8 @@ html[data-qali-desktop].dark {
 }
 
 @theme inline {
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
-    sans-serif;
-  --font-display:
-    "Geist Pixel Square", "Geist Mono", ui-monospace, "SFMono-Regular", Menlo,
-    Monaco, Consolas, monospace;
+  --font-sans: "Geist Variable", -apple-system, sans-serif;
+  --font-display: "Geist Variable", -apple-system, sans-serif;
   --font-display--font-weight: 500;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -324,7 +336,8 @@ html[data-qali-desktop].dark {
   }
   html {
     @apply font-sans;
-    font-size: 14px;
+    font-size: 16px;
+    letter-spacing: -0.015em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -336,6 +349,22 @@ html[data-qali-desktop].dark {
 }
 
 @layer components {
+  .qali-workspace-inset {
+    margin: 0 8px 8px 0;
+    border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+    border-radius: 20px;
+    background: var(--background);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.24), inset 0 1px 0 var(--inner-highlight);
+  }
+  .qali-shell-material {
+    background: var(--qali-glass-surface);
+    backdrop-filter: blur(var(--qali-glass-blur)) saturate(var(--qali-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--qali-glass-blur)) saturate(var(--qali-glass-saturation));
+    box-shadow: inset 1px 0 0 var(--qali-edge-highlight);
+  }
+  .qali-control--accent {
+    color: var(--qali-accent-foreground);
+  }
   .qali-surface {
     border: 1px solid var(--qali-edge-subtle);
     color: var(--foreground);
@@ -370,9 +399,9 @@ html[data-qali-desktop].dark {
   }
   .qali-control {
     transition:
-      color var(--qali-motion-feedback) ease,
-      background-color var(--qali-motion-feedback) ease,
-      border-color var(--qali-motion-feedback) ease,
+      color 150ms ease-out,
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
       box-shadow var(--qali-motion-feedback) ease,
       transform var(--qali-motion-feedback) var(--qali-ease-out),
       opacity var(--qali-motion-feedback) ease;
@@ -574,12 +603,16 @@ html[data-qali-desktop].dark {
     /* Native traffic lights occupy roughly the first 78px. Utilities on the
      * toolbar previously won the cascade, so enforce one platform-owned safe
      * inset with breathing room for the month picker. */
-    padding-inline-start: 32px !important;
+    padding-inline-start: 40px !important;
     user-select: none;
   }
+  html[data-qali-desktop] .settings-sidebar-header,
+  html[data-qali-desktop] .insights-window-header {
+    padding-inline-start: 40px !important;
+  }
   .calendar-window-header {
-    min-height: 56px;
-    height: 56px;
+    min-height: 48px;
+    height: 48px;
   }
   html[data-qali-desktop]
     .calendar-window-header
@@ -624,8 +657,8 @@ html[data-qali-desktop].dark {
     box-shadow: var(--event-surface-highlight);
     color: var(--event-surface-foreground);
     transition:
-      background-color var(--qali-motion-feedback) ease,
-      border-color var(--qali-motion-feedback) ease;
+      background-color var(--qali-motion-feedback) var(--qali-ease-out),
+      border-color var(--qali-motion-feedback) var(--qali-ease-out);
   }
   @media (hover: hover) and (pointer: fine) {
     .event-surface[data-event-surface-state="idle"]:hover,
@@ -1035,6 +1068,21 @@ html[data-qali-desktop].dark {
   }
 }
 
+/* The explicit preference takes the same path as the system media query. */
+html[data-qali-reduce-transparency],
+html[data-qali-desktop][data-qali-reduce-transparency] {
+  --qali-glass-surface: var(--qali-surface-raised-opaque);
+  --qali-glass-panel-surface: var(--qali-surface-raised-opaque);
+  --qali-glass-control-surface: var(--qali-surface-raised-opaque);
+  --qali-glass-edge: var(--qali-glass-edge-firm);
+  --qali-glass-blur: 0px;
+  --qali-glass-saturation: 1;
+}
+html[data-qali-reduce-transparency] :is(.qali-shell-material, .qali-glass, .qali-goo-glass, .qali-goo-backdrop, .qali-settings-sidebar) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 @media (prefers-reduced-transparency: reduce) {
   :root,
   .dark {
@@ -1043,6 +1091,7 @@ html[data-qali-desktop].dark {
     --qali-glass-control-surface: var(--qali-surface-raised-opaque);
     --qali-glass-edge: var(--qali-glass-edge-firm);
   }
+  .qali-shell-material,
   .qali-glass,
   .qali-goo-glass,
   .qali-goo-backdrop {
@@ -1092,5 +1141,99 @@ html[data-qali-desktop].dark {
   [data-sileo-header-inner] {
     animation: none !important;
     transition-duration: 100ms !important;
+  }
+}
+
+/* Portal floating material: a translucent shell with a fine inner highlight. */
+@layer components {
+  .qali-frosted-panel {
+    background: color-mix(in srgb, var(--background) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    backdrop-filter: blur(32px) saturate(1.8);
+    -webkit-backdrop-filter: blur(32px) saturate(1.8);
+    box-shadow: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 8px 24px rgb(0 0 0 / .12);
+  }
+  .dark .qali-frosted-panel {
+    background: color-mix(in srgb, var(--background) 48%, transparent);
+  }
+  .qali-settings-card {
+    background: color-mix(in srgb, var(--background) 96%, var(--foreground));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+  }
+  html[data-qali-reduce-transparency] .qali-frosted-panel {
+    background: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .qali-frosted-panel, .dark .qali-frosted-panel {
+      background: var(--background);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+}
+
+@layer components {
+  .qali-command-group [cmdk-group-heading] { padding: 8px 10px; font-size: 11px; font-weight: 500; color: var(--muted-foreground); }
+}
+
+@layer components {
+  .qali-command-tile {
+    position: relative;
+    overflow: hidden;
+    background: var(--command-tile-color);
+    color: color-mix(in oklab, var(--command-tile-color) 65%, black);
+    box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .55), inset 0 -2px 0 rgb(0 0 0 / .28), inset 0 0 0 1px rgb(255 255 255 / .18);
+    transition: transform 100ms ease-out, color 100ms ease-out;
+  }
+  .qali-command-tile::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(to bottom, rgb(255 255 255 / .3), transparent 50%, rgb(0 0 0 / .18));
+  }
+  .dark .qali-command-tile {
+    box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), inset 0 -2px 0 rgb(0 0 0 / .4), inset 0 0 0 1px rgb(255 255 255 / .12);
+  }
+  [cmdk-item][data-selected=true] .qali-command-tile { color: color-mix(in oklab, var(--command-tile-color) 30%, black); }
+  [cmdk-item]:active .qali-command-tile { transform: scale(.96); }
+  @media (prefers-reduced-motion: reduce) {
+    .qali-command-tile { transition: none; }
+    [cmdk-item]:active .qali-command-tile { transform: none; }
+  }
+}
+
+/* Dense floating glass only; workspace chrome and inset card frames stay unchanged. */
+@layer components {
+  :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]) {
+    --qali-glass-grain: none;
+    --qali-menu-fill: color-mix(in srgb, var(--background) 90%, transparent);
+    background-color: var(--qali-menu-fill);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='.055'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    backdrop-filter: blur(80px) saturate(1.5);
+    -webkit-backdrop-filter: blur(80px) saturate(1.5);
+  }
+  .dark :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]) {
+    --qali-menu-fill: color-mix(in srgb, var(--background) 86%, transparent);
+    background-color: var(--qali-menu-fill);
+  }
+  html[data-qali-reduce-transparency] :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]) {
+    background-color: var(--background);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]),
+    .dark :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]) {
+      background-color: var(--background);
+      background-image: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 }

@@ -71,7 +71,7 @@ export function BottomIsland() {
       transition={SPRING_DOCK}
       style={{ borderRadius: 20, willChange: "transform" }}
       className={cn(
-        "qali-goo-surface pointer-events-auto overflow-hidden p-4",
+        "qali-goo-surface qali-frosted-panel pointer-events-auto overflow-hidden p-4",
         widthClass(view),
       )}
     >

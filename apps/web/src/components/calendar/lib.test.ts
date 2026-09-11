@@ -14,6 +14,7 @@ import {
   laneBox,
   WEEK_LANE_TILE_MAX_STAGGER_MS,
   layoutAllDayEvents,
+  collapsedAllDayStacks,
   layoutDayEvents,
   visibleAllDayMetrics,
   visibleMonthEventMetrics,
@@ -29,12 +30,16 @@ import {
   VIEW_BUFFER,
   VIEW_COLUMNS,
 } from "./lib";
-import { createZonedCalendarClock, parseCivilDate } from "./zoned-calendar-clock";
+import {
+  createZonedCalendarClock,
+  parseCivilDate,
+} from "./zoned-calendar-clock";
 
 process.env.SKIP_ENV_VALIDATION = "1";
 const { newEventDefaults } = await import("./event-create");
 const { createGridEventDraft } = await import("./day-column");
-const { resolveDraggedWallTime, resolveResizeWallTime } = await import("./use-event-drag");
+const { resolveDraggedWallTime, resolveResizeWallTime } =
+  await import("./use-event-drag");
 
 const days = Array.from({ length: 5 }, (_, i) => new Date(2026, 0, 5 + i));
 
@@ -81,7 +86,11 @@ describe("nextFreeSlot", () => {
   });
 
   test("skips past an event that blocks the 9 AM slot", () => {
-    const slot = nextFreeSlot(dayStart, [timedEvent("a", 9, 0, 10, 0)], beforeDay);
+    const slot = nextFreeSlot(
+      dayStart,
+      [timedEvent("a", 9, 0, 10, 0)],
+      beforeDay,
+    );
     expect(slot).toEqual({ startMs: at(10), endMs: at(10, 30) });
   });
 
@@ -196,11 +205,11 @@ describe("primary-zone event drafts", () => {
       endResolution: { kind: "ambiguous" },
     });
     if (draft.endResolution.kind !== "ambiguous") {
-      throw new Error("Expected the repeated grid end hour to remain ambiguous");
+      throw new Error(
+        "Expected the repeated grid end hour to remain ambiguous",
+      );
     }
-    expect(draft.endResolution.earlierMs).not.toBe(
-      draft.endResolution.laterMs,
-    );
+    expect(draft.endResolution.earlierMs).not.toBe(draft.endResolution.laterMs);
   });
 
   test("uses the resized end edge fold rather than the start edge fold", () => {
@@ -567,8 +576,18 @@ describe("layoutDayEvents overlap style", () => {
     expect(layout.a.laneAdvance).toBe(1);
     expect(layout.b.laneAdvance).toBe(1);
     // Tiled columns don't overlap: card b's left edge starts at card a's right.
-    const a = laneBox(layout.a.columnIndex, layout.a.columnCount, layout.a.columnSpan, layout.a.laneAdvance);
-    const b = laneBox(layout.b.columnIndex, layout.b.columnCount, layout.b.columnSpan, layout.b.laneAdvance);
+    const a = laneBox(
+      layout.a.columnIndex,
+      layout.a.columnCount,
+      layout.a.columnSpan,
+      layout.a.laneAdvance,
+    );
+    const b = laneBox(
+      layout.b.columnIndex,
+      layout.b.columnCount,
+      layout.b.columnSpan,
+      layout.b.laneAdvance,
+    );
     expect(a.left + a.width).toBeCloseTo(b.left, 5);
   });
 
@@ -765,7 +784,10 @@ describe("eventQueryRange", () => {
       const anchor = pageStart("month", new Date(2026, monthOffset, 1));
       const window = eventQueryRange("month", anchor);
       for (let delta = -maxDelta; delta <= maxDelta; delta++) {
-        const rendered = renderedRange("month", addPages("month", anchor, delta));
+        const rendered = renderedRange(
+          "month",
+          addPages("month", anchor, delta),
+        );
         expect(window.startMs).toBeLessThanOrEqual(rendered.startMs);
         expect(window.endMs).toBeGreaterThanOrEqual(rendered.endMs);
       }
@@ -780,4 +802,48 @@ describe("eventQueryRange", () => {
       expect(eventQueryRange("week", sameWeek)).toEqual(base);
     }
   });
+});
+
+test("all-day overflow belongs to the overlapping card, once per event", () => {
+  const entry = (
+    id: string,
+    startIdx: number,
+    endIdx: number,
+    lane: number,
+  ) => ({
+    event: { _id: id } as CalendarEvent,
+    startIdx,
+    endIdx,
+    lane,
+    isConflicting: false,
+    conflictingEventIds: [],
+  });
+  const a = entry("a", 0, 1, 0);
+  const b = entry("b", 3, 4, 0);
+  const c = entry("c", 3, 3, 1);
+  const d = entry("d", 3, 4, 2);
+  const stacks = collapsedAllDayStacks([a, b, c, d]);
+  expect(
+    stacks.map(({ visible, hidden }) => [
+      visible.event._id,
+      hidden.map((e) => e.event._id),
+    ]),
+  ).toEqual([
+    ["a", []],
+    ["b", ["c", "d"]],
+  ]);
+});
+
+test("an event whose earlier lane is outside the view is still visible", () => {
+  const event = {
+    event: { _id: "only" } as CalendarEvent,
+    startIdx: 2,
+    endIdx: 3,
+    lane: 1,
+    isConflicting: false,
+    conflictingEventIds: [],
+  };
+  expect(collapsedAllDayStacks([event])).toEqual([
+    { visible: event, hidden: [] },
+  ]);
 });

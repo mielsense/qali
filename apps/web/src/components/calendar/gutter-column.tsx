@@ -1,5 +1,3 @@
-import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@qali/ui/lib/utils";
 
 import {
@@ -29,9 +27,6 @@ function formatNow(now: number, timeZone: string): string {
  * Its header block matches the panel header height so the hour rows align. */
 export function GutterColumn({
   allDayHeight,
-  allDayExpanded,
-  hiddenAllDayEventCount,
-  onToggleAllDay,
   now,
   timeRange,
   hourHeight,
@@ -40,9 +35,6 @@ export function GutterColumn({
   referenceDate,
 }: {
   allDayHeight: number;
-  allDayExpanded: boolean;
-  hiddenAllDayEventCount: number;
-  onToggleAllDay: () => void;
   now: number;
   timeRange: CalendarTimeRange;
   hourHeight: number;
@@ -88,27 +80,6 @@ export function GutterColumn({
               zone.timeZone}
           </span>
         ))}
-        {hiddenAllDayEventCount > 0 && (
-          <button
-            type="button"
-            aria-controls="calendar-all-day-rail"
-            aria-expanded={allDayExpanded}
-            aria-label={
-              allDayExpanded
-                ? "Collapse all-day events"
-                : `Show ${hiddenAllDayEventCount} more all-day ${hiddenAllDayEventCount === 1 ? "event" : "events"}`
-            }
-            onClick={onToggleAllDay}
-            className="absolute right-1 bottom-1 flex h-5 items-center gap-0.5 rounded-md bg-accent px-1 text-[10px] font-medium text-muted-foreground ring-1 ring-border/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {!allDayExpanded && <span>+{hiddenAllDayEventCount}</span>}
-            <HugeiconsIcon
-              icon={allDayExpanded ? ArrowUp01Icon : ArrowDown01Icon}
-              strokeWidth={2}
-              className="size-3"
-            />
-          </button>
-        )}
       </div>
       {/* The sticky gutter wrapper is stretched only to the scroller's client
           height, but the day strip's content runs taller (MIN_DAY_HEIGHT grid +

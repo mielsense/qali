@@ -13,7 +13,6 @@ import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@qali/ui/lib/utils";
 
 import {
-  SETTINGS_NAVIGATION,
   findSettingsNavigation,
   findSettingsSearchResults,
   moveSettingsNavigation,
@@ -47,9 +46,7 @@ export function SettingsSidebar() {
     readonly (SettingsNavigationItem | SettingsSearchItem)[]
   >(
     () =>
-      searching
-        ? findSettingsSearchResults(query)
-        : findSettingsNavigation(""),
+      searching ? findSettingsSearchResults(query) : findSettingsNavigation(""),
     [query, searching],
   );
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
@@ -84,68 +81,68 @@ export function SettingsSidebar() {
 
   return (
     <aside
-      className="qali-settings-sidebar min-h-0 w-[252px] shrink-0 overflow-y-auto border-e border-border bg-background px-4 py-4"
+      className="qali-settings-sidebar flex h-full min-h-0 w-64 shrink-0 flex-col border-e border-border bg-background"
       aria-label="Settings navigation"
     >
-      <label className="qali-control flex h-9 items-center gap-2.5 rounded-xl border border-input bg-[var(--qali-surface-flat)] px-3 text-muted-foreground focus-within:border-[var(--qali-accent)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--qali-accent-focus)]">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          strokeWidth={2}
-          className="size-4"
-          aria-hidden="true"
-        />
-        <span className="sr-only">Search settings</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.currentTarget.value)}
-          placeholder="Search settings"
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-        />
-      </label>
+      <div className="px-5 pt-5 pb-4">
+        <h2 className="text-lg font-medium text-foreground">Settings</h2>
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">
+          Calendar and workspace preferences
+        </p>
+      </div>
+      <div className="shrink-0 px-4 pb-4">
+        <label className="qali-control flex h-9 w-full items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-muted-foreground shadow-[var(--qali-shadow-control)] focus-within:border-ring">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            strokeWidth={2}
+            className="size-4"
+            aria-hidden="true"
+          />
+          <span className="sr-only">Search settings</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            placeholder="Search settings"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          />
+        </label>
+      </div>
       <nav
-        className="mt-5"
+        className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
         aria-label="Settings categories"
         onKeyDown={onNavigationKeyDown}
       >
         {searching ? (
-          <p className="mb-2 px-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="px-2 py-2 text-xs text-muted-foreground">
             Matching settings
           </p>
         ) : null}
-        <ul className={cn(searching ? "space-y-0.5" : "space-y-1.5")}>
+        <ul className="flex flex-col gap-1 py-1">
           {items.map((item, index) => {
             const Icon = icons[item.to];
             const searchItem = isSettingsSearchItem(item);
-            const category = SETTINGS_NAVIGATION.find(
-              (entry) => entry.to === item.to,
-            )?.label;
             const active =
               pathname === item.to &&
               (!searchItem || activeAnchor === item.anchor);
             return (
-              <li
-                key={`${item.to}:${searchItem ? item.anchor : "category"}`}
-              >
+              <li key={`${item.to}:${searchItem ? item.anchor : "category"}`}>
                 <Link
                   ref={(node) => {
                     itemRefs.current[index] = node;
                   }}
                   to={item.to as SettingsPath}
-                  {...(searchItem
-                    ? { hash: item.anchor }
-                    : {})}
+                  {...(searchItem ? { hash: item.anchor } : {})}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group flex w-full items-center gap-2.5 rounded-lg px-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--qali-accent-focus)]",
-                    searchItem ? "min-h-12 py-1.5" : "min-h-10",
-                    active && "font-medium text-[var(--qali-accent)]",
+                    "relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-sidebar-foreground outline-none transition-colors duration-150 hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring",
+                    active && "font-medium text-foreground dark:text-white",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex size-7 shrink-0 items-center justify-center",
-                      active && "text-[var(--qali-accent)]",
+                      "flex size-4 shrink-0 items-center justify-center",
+                      active && "text-foreground dark:text-white",
                     )}
                   >
                     <HugeiconsIcon
@@ -157,11 +154,6 @@ export function SettingsSidebar() {
                   </span>
                   <span className="min-w-0 flex-1 truncate">
                     <span className="block truncate">{item.label}</span>
-                    {searchItem ? (
-                      <span className="block truncate text-[10px] font-normal text-muted-foreground">
-                        {category} · {item.description}
-                      </span>
-                    ) : null}
                   </span>
                 </Link>
               </li>

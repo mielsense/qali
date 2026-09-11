@@ -13,6 +13,8 @@ import {
 } from "./event-surface";
 import {
   ALLDAY_BAND_PADDING,
+  collapsedAllDayStacks,
+  ALLDAY_COLLAPSED_LANES,
   ALLDAY_EVENT_GAP,
   ALLDAY_EVENT_HEIGHT,
   type AllDayEventLayout,
@@ -21,6 +23,7 @@ import {
 } from "./lib";
 import { CALENDAR_HEADER_LAYOUT } from "./calendar-header-layout";
 import { press } from "./motion";
+import { AllDayOverflow } from "./all-day-overflow";
 import { useEventCapabilities } from "./permissions";
 import { RevealFlash, type Reveal } from "./today-pulse";
 
@@ -51,11 +54,17 @@ export function PanelHeader({
   const colorFor = useEventColor();
   const capabilitiesFor = useEventCapabilities();
   const template = dayColsTemplate(days.length);
+  const stacks = allDayExpanded
+    ? allDayEvents.map((visible) => ({
+        visible,
+        hidden: [] as AllDayEventLayout[],
+      }))
+    : collapsedAllDayStacks(allDayEvents);
   // Absolutely positioned cards don't contribute to the rail's scroll height, so
   // when expanded past the visible cap we'd have no way to reach the lower lanes.
   // A zero-width spacer sized to the rendered lane stack restores that scroll.
   const renderedLaneCount = allDayEvents.reduce((max, { lane }) => {
-    if (!allDayExpanded && lane >= 1) return max;
+    if (!allDayExpanded && lane >= ALLDAY_COLLAPSED_LANES) return max;
     return Math.max(max, lane + 1);
   }, 0);
   const railContentHeight =
@@ -147,71 +156,87 @@ export function PanelHeader({
           className="w-0 shrink-0"
           style={{ height: railContentHeight }}
         />
-        {allDayEvents.map(({ event, startIdx, endIdx, lane, isConflicting }) => {
-          if (!allDayExpanded && lane >= 1) return null;
-          const colorVar = colorFor(event);
-          const surfaceState = eventSurfaceState({
-            canEdit: capabilitiesFor(event).canEdit,
-            hasConflict: isConflicting,
-          });
-          const surface = eventSurfacePresentation({
-            colorVar,
-            variant: "all-day",
-            state: surfaceState,
-          });
-          const hoverSurface = eventSurfacePresentation({
-            colorVar,
-            variant: "all-day",
-            state: "hover",
-          });
-          const focusSurface = eventSurfacePresentation({
-            colorVar,
-            variant: "all-day",
-            state: "focus",
-          });
-          const position = allDaySurfacePosition(lane);
-          // Columns are equal 1fr tracks, so one day is `100% / days.length` of
-          // the rail; matching surface insets keep every event edge clear.
-          const colPct = `(100% / ${days.length})`;
-          return (
-            <motion.button
-              type="button"
-              key={event._id}
-              data-event
-              data-event-surface-state={surfaceState}
-              onClick={() => open({ kind: "event", event })}
-              whileTap={press.whileTap}
-              transition={{ scale: press.transition }}
-              className={cn(
-                "absolute flex items-center overflow-hidden px-2.5 py-1.5 text-left text-xs font-medium leading-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                surface.className,
-              )}
-              style={{
-                left: `calc(${colPct} * ${startIdx} + ${EVENT_SURFACE_GUTTERS.horizontalPx}px)`,
-                width: `calc(${colPct} * ${endIdx - startIdx + 1} - ${EVENT_SURFACE_GUTTERS.horizontalPx * 2}px)`,
-                top: position.topPx,
-                height: position.heightPx,
-                borderRadius: `${surface.radiusPx}px`,
-                "--event-surface-background": surface.backgroundColor,
-                "--event-surface-border": surface.borderColor,
-                "--event-surface-highlight": surface.boxShadow,
-                "--event-surface-foreground": surface.color,
-                "--event-surface-color": `var(${colorVar})`,
-                "--event-surface-hover-fill": `${hoverSurface.fillPercent}%`,
-                "--event-surface-hover-edge": `${hoverSurface.edgePercent}%`,
-                "--event-surface-focus-fill": `${focusSurface.fillPercent}%`,
-                "--event-surface-focus-edge": `${focusSurface.edgePercent}%`,
-              } as React.CSSProperties}
-            >
-              <RevealFlash
-                reveal={reveal}
-                targetId={[event._id, event.googleEventId]}
-                className="rounded-lg bg-[color-mix(in_oklab,var(--primary)_45%,transparent)]"
-              />
-              <span className="truncate">{event.summary ?? "(No title)"}</span>
-            </motion.button>
-          );
-        })}
+        {stacks.map(
+          ({
+            visible: { event, startIdx, endIdx, lane, isConflicting },
+            hidden,
+          }) => {
+            const colorVar = colorFor(event);
+            const surfaceState = eventSurfaceState({
+              canEdit: capabilitiesFor(event).canEdit,
+              hasConflict: isConflicting,
+            });
+            const surface = eventSurfacePresentation({
+              colorVar,
+              variant: "all-day",
+              state: surfaceState,
+            });
+            const hoverSurface = eventSurfacePresentation({
+              colorVar,
+              variant: "all-day",
+              state: "hover",
+            });
+            const focusSurface = eventSurfacePresentation({
+              colorVar,
+              variant: "all-day",
+              state: "focus",
+            });
+            const position = allDaySurfacePosition(allDayExpanded ? lane : 0);
+            // Columns are equal 1fr tracks, so one day is `100% / days.length` of
+            // the rail; matching surface insets keep every event edge clear.
+            const colPct = `(100% / ${days.length})`;
+            return (
+              <div
+                key={event._id}
+                className="absolute flex items-center gap-1"
+                style={{
+                  left: `calc(${colPct} * ${startIdx} + ${EVENT_SURFACE_GUTTERS.horizontalPx}px)`,
+                  width: `calc(${colPct} * ${endIdx - startIdx + 1} - ${EVENT_SURFACE_GUTTERS.horizontalPx * 2}px)`,
+                  top: position.topPx,
+                  height: position.heightPx,
+                }}
+              >
+                <motion.button
+                  type="button"
+                  key={event._id}
+                  data-event
+                  data-event-surface-state={surfaceState}
+                  onClick={() => open({ kind: "event", event })}
+                  whileTap={press.whileTap}
+                  transition={{ scale: press.transition }}
+                  className={cn(
+                    "relative h-full min-w-0 flex-1 flex items-center overflow-hidden px-2.5 py-1.5 text-left text-xs font-medium leading-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    surface.className,
+                  )}
+                  style={
+                    {
+                      borderRadius: `${surface.radiusPx}px`,
+                      "--event-surface-background": surface.backgroundColor,
+                      "--event-surface-border": surface.borderColor,
+                      "--event-surface-highlight": surface.boxShadow,
+                      "--event-surface-foreground": surface.color,
+                      "--event-surface-color": `var(${colorVar})`,
+                      "--event-surface-hover-fill": `${hoverSurface.fillPercent}%`,
+                      "--event-surface-hover-edge": `${hoverSurface.edgePercent}%`,
+                      "--event-surface-focus-fill": `${focusSurface.fillPercent}%`,
+                      "--event-surface-focus-edge": `${focusSurface.edgePercent}%`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <RevealFlash
+                    reveal={reveal}
+                    targetId={[event._id, event.googleEventId]}
+                    className="rounded-lg bg-[color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                  />
+                  <span className="truncate">
+                    {event.summary ?? "(No title)"}
+                  </span>
+                </motion.button>
+                <AllDayOverflow events={hidden} visible={{ event }} />
+              </div>
+            );
+          },
+        )}
       </div>
     </div>
   );

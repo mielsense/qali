@@ -32,7 +32,7 @@ describe("settings workspace layout", () => {
     expect(sidebar).toContain("min-h-0");
     expect(sidebar).toContain("overflow-y-auto");
     expect(sidebar).toContain("focusedIndex >= 0 ? focusedIndex : routeIndex");
-    expect(sidebar).toContain('active && "font-medium text-[var(--qali-accent)]"');
+    expect(sidebar).toContain('active && "font-medium text-foreground dark:text-white"');
     expect(sidebar).not.toContain("border-border bg-muted font-medium");
     expect(section).not.toContain("border-y");
   });
