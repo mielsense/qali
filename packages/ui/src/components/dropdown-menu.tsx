@@ -1,4 +1,5 @@
 import * as React from "react"
+import { FloatingPositioner } from "@qali/ui/components/floating-positioner";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 
 import { glassSurfaceVariants } from "@qali/ui/components/glass-surface"
@@ -32,7 +33,7 @@ function DropdownMenuContent({
   >) {
   return (
     <MenuPrimitive.Portal>
-      <MenuPrimitive.Positioner
+      <MenuPrimitive.Positioner render={<FloatingPositioner />}
         className="isolate z-50 outline-none"
         align={align}
         alignOffset={alignOffset}

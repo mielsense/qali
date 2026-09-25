@@ -1,4 +1,5 @@
 "use client"
+import { FloatingPositioner } from "@qali/ui/components/floating-positioner";
 
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
 import { ArrowDown01Icon, Cancel01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
@@ -59,11 +60,11 @@ function ComboboxInput({
 function ComboboxContent({ className, ...props }: ComboboxPrimitive.Popup.Props) {
   return (
     <ComboboxPrimitive.Portal>
-      <ComboboxPrimitive.Positioner sideOffset={6} className="isolate z-50">
+      <ComboboxPrimitive.Positioner render={<FloatingPositioner />} sideOffset={6} className="isolate z-50">
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(
-            "w-(--anchor-width) max-w-(--available-width) overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg",
+            "qali-menu-surface w-(--anchor-width) max-w-(--available-width) overflow-hidden rounded-xl border border-border text-popover-foreground",
             className,
           )}
           {...props}

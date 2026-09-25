@@ -1,4 +1,5 @@
 "use client"
+import { FloatingPositioner } from "@qali/ui/components/floating-positioner";
 
 import { Select as SelectPrimitive } from "@base-ui/react"
 import { ArrowDown01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
@@ -30,11 +31,11 @@ function SelectTrigger({ className, children, ...props }: SelectPrimitive.Trigge
 function SelectContent({ className, ...props }: SelectPrimitive.Popup.Props) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Positioner sideOffset={6} className="isolate z-50">
+      <SelectPrimitive.Positioner render={<FloatingPositioner />} sideOffset={6} className="isolate z-50">
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            "min-w-(--anchor-width) max-h-(--available-height) overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg",
+            "qali-menu-surface min-w-(--anchor-width) max-h-(--available-height) overflow-hidden rounded-xl border border-border text-popover-foreground",
             className,
           )}
           {...props}

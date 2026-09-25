@@ -24,7 +24,7 @@ export function SettingsLayout() {
       className="flex h-full items-stretch bg-transparent"
       style={{ WebkitAppRegion: "drag" } as CSSProperties}
     >
-      <div className="settings-sidebar-header flex w-[252px] shrink-0 items-center border-e border-border px-4">
+      <div className="settings-sidebar-header flex w-[252px] shrink-0 items-center px-4">
         <div>
           <span className="font-display text-[13px] tracking-[0.04em] text-foreground">
             Settings

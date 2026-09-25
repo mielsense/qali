@@ -7,11 +7,11 @@ const read = (relativePath: string) =>
   readFileSync(new URL(relativePath, import.meta.url), "utf8");
 
 describe("settings workspace layout", () => {
-  test("continues the settings navigation through the workspace header", () => {
+  test("keeps the settings title bar free of the sidebar divider", () => {
     const layout = read("./settings-layout.tsx");
 
     expect(layout).toContain("settings-sidebar-header");
-    expect(layout).toContain("border-e border-border");
+    expect(layout).not.toContain("border-e border-border");
     expect(layout).not.toContain("calendar-window-header flex h-[52px]");
   });
 

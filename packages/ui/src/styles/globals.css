@@ -107,8 +107,8 @@
   --qali-ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --qali-shadow-attached: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-popover:
-    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 6px oklch(0 0 0 / 0.07),
-    0 12px 28px oklch(0 0 0 / 0.12), 0 0 0 1px var(--qali-glass-edge);
+    0 2px 6px oklch(0 0 0 / 0.07),
+    0 12px 28px oklch(0 0 0 / 0.12);
   --qali-shadow-control: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-float:
     inset 0 1px 0 rgb(255 255 255 / 0.64), 0 2px 5px rgb(0 0 0 / 0.08),
@@ -208,8 +208,8 @@
   --qali-glass-saturation: 1.08;
   --qali-shadow-attached: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-popover:
-    inset 1px 1px 0 var(--qali-edge-highlight), 0 2px 8px oklch(0 0 0 / 0.34),
-    0 16px 34px oklch(0 0 0 / 0.48), 0 0 0 1px var(--qali-glass-edge);
+    0 2px 8px oklch(0 0 0 / 0.34),
+    0 16px 34px oklch(0 0 0 / 0.48);
   --qali-shadow-control: inset 0 1px 0 var(--inner-highlight), inset 0 -1px 0 var(--inner-shade), 0 1px 2px var(--shadow-soft);
   --qali-shadow-float:
     inset 0 1px 0 rgb(255 255 255 / 0.08), 0 3px 8px rgb(0 0 0 / 0.38),
@@ -1230,6 +1230,49 @@ html[data-qali-reduce-transparency] :is(.qali-shell-material, .qali-glass, .qali
   @media (prefers-reduced-transparency: reduce) {
     :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]),
     .dark :is(.qali-floating-layer, .qali-command-center, [data-floating-action-dock]) {
+      background-color: var(--background);
+      background-image: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+}
+
+/* Floating menus use the command palette material without the older glass
+   highlight/grain overlays, which made small popovers look lighter. */
+@layer components {
+  .qali-floating-layer.qali-glass::before,
+  .qali-floating-layer.qali-glass::after {
+    content: none;
+  }
+}
+
+/* Dense floating glass only; workspace chrome and inset card frames stay unchanged. */
+@layer components {
+  :is(.qali-floating-layer, .qali-menu-surface, .qali-command-center, [data-floating-action-dock]) {
+    border-color: var(--qali-glass-edge);
+    box-shadow: var(--qali-shadow-popover);
+    --qali-glass-grain: none;
+    --qali-menu-fill: color-mix(in srgb, var(--background) 82%, transparent);
+    background-color: var(--qali-menu-fill);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='.055'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    backdrop-filter: blur(32px) saturate(1.2);
+    -webkit-backdrop-filter: blur(32px) saturate(1.2);
+  }
+  .dark :is(.qali-floating-layer, .qali-menu-surface, .qali-command-center, [data-floating-action-dock]) {
+    --qali-menu-fill: color-mix(in srgb, var(--background) 86%, transparent);
+    background-color: var(--qali-menu-fill);
+  }
+  html[data-qali-reduce-transparency] :is(.qali-floating-layer, .qali-menu-surface, .qali-command-center, [data-floating-action-dock]) {
+    background-color: var(--background);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :is(.qali-floating-layer, .qali-menu-surface, .qali-command-center, [data-floating-action-dock]),
+    .dark :is(.qali-floating-layer, .qali-menu-surface, .qali-command-center, [data-floating-action-dock]) {
       background-color: var(--background);
       background-image: none;
       backdrop-filter: none;

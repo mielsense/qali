@@ -1,4 +1,5 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
+import { FloatingPositioner } from "@qali/ui/components/floating-positioner";
 
 import { glassSurfaceVariants } from "@qali/ui/components/glass-surface"
 import { cn } from "@qali/ui/lib/utils"
@@ -25,7 +26,7 @@ function PopoverContent({
   >) {
   return (
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Positioner
+      <PopoverPrimitive.Positioner render={<FloatingPositioner />}
         className="isolate z-50 outline-none"
         align={align}
         alignOffset={alignOffset}
