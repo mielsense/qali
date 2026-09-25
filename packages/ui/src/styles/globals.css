@@ -352,9 +352,9 @@ html[data-qali-desktop].dark {
   .qali-workspace-inset {
     margin: 0 8px 8px 0;
     border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+    border-top: 0;
     border-radius: 20px;
     background: var(--background);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.24), inset 0 1px 0 var(--inner-highlight);
   }
   .qali-shell-material {
     background: var(--qali-glass-surface);

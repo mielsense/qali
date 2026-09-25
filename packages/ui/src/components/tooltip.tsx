@@ -1,6 +1,5 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
-import { glassSurfaceVariants } from "@qali/ui/components/glass-surface"
 import { cn } from "@qali/ui/lib/utils"
 
 function TooltipProvider({
@@ -31,7 +30,7 @@ function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
 function TooltipContent({
   className,
   side = "top",
-  sideOffset = 4,
+  sideOffset = 8,
   align = "center",
   alignOffset = 0,
   children,
@@ -53,14 +52,12 @@ function TooltipContent({
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(
-            glassSurfaceVariants({ variant: "tooltip" }),
-            "qali-elevation-popover qali-floating-layer z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 px-2.5 py-1.5 text-xs text-popover-foreground has-data-[slot=kbd]:pr-1.5 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-md",
+            "z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-2 rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs leading-4 text-popover-foreground shadow-md [&_kbd]:rounded [&_kbd]:border-0 [&_kbd]:bg-transparent [&_kbd]:p-0 [&_kbd]:text-[10px] [&_kbd]:text-muted-foreground",
             className
           )}
           {...props}
         >
           {children}
-          <TooltipPrimitive.Arrow className="qali-tooltip-arrow z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:translate-x-[1.5px] data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:translate-x-[-1.5px] data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:translate-x-[-1.5px] data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:translate-x-[1.5px] data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>
