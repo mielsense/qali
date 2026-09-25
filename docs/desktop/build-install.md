@@ -114,6 +114,16 @@ compatibility lane and its supported ChatGPT device-login flow. Qali reports a
 typed remediation state when the installation is missing, changed,
 incompatible, or unauthenticated; the calendar continues to work.
 
+Qali follows the stable Homebrew installation link and verifies the resolved
+executable and protocol schema. Codex CLI 0.156.1 is supported alongside the
+existing compatibility lane. **Check again** rescans automatically, without a
+file picker; unverified versions require a Qali compatibility update.
+
+The 0.156.1 lane passed contained startup, isolated thread creation, and an
+existing-login account check. Qali uses the public macOS CA bundle through
+`CODEX_CA_CERTIFICATE` so HTTPS verification works inside the restricted runtime.
+Authenticated model execution remains a separate opt-in check.
+
 Qali does not copy or bundle Codex credentials. Deterministic release tests do
 not use a personal subscription; an authenticated semantic smoke remains an
 explicit local opt-in step.

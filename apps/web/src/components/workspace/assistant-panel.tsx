@@ -214,8 +214,6 @@ export function AssistantPanel({
           await desktopSession.openChallenge();
         }
       }
-      else if (action === "choose-installation")
-        await desktopAssistant?.chooseCodexInstallation();
       else if (action === "reprobe" || action === "retry")
         await desktopSession?.refreshStatus();
     } catch {

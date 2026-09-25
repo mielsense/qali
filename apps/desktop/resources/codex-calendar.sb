@@ -36,6 +36,8 @@
   (literal (param "CODEX_CWD"))
   (subpath (param "CODEX_HOME"))
   (subpath (param "CODEX_CWD"))
+  ; Public system CA certificates, used by Codex with TLS verification enabled.
+  (literal "/private/etc/ssl/cert.pem")
   (subpath "/System/Library")
   (subpath "/usr/lib")
   (subpath "/usr/share/locale")

@@ -7,7 +7,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { AssistantProviderStatus } from "@qali/desktop-contracts";
 
-export type AssistantRemediation = "sign-in" | "reprobe" | "choose-installation" | "retry" | null;
+export type AssistantRemediation = "sign-in" | "reprobe" | "retry" | null;
 
 export function assistantCanSend(
   status: AssistantProviderStatus | null | undefined,
@@ -19,9 +19,9 @@ export function assistantRemediation(status: AssistantProviderStatus | null | un
   switch (status?.kind) {
     case "authentication-required": return "sign-in";
     case "needs-reprobe": return "reprobe";
-    case "incompatible": return "choose-installation";
+    case "incompatible": return "reprobe";
+    case "unavailable": return "reprobe";
     case "probe-failed":
-    case "unavailable":
     case "offline": return "retry";
     default: return null;
   }
@@ -48,7 +48,7 @@ export function AssistantReadiness({
       {remediation && (
         <button type="button" onClick={() => onRemediate(remediation)} className="-my-1 shrink-0 rounded-md px-1.5 py-1 font-medium text-foreground outline-none hover:bg-background/75 focus-visible:ring-2 focus-visible:ring-ring">
           <HugeiconsIcon icon={remediation === "sign-in" ? Login02Icon : RefreshIcon} strokeWidth={2} className="mr-1 inline size-3.5" aria-hidden />
-          {remediation === "sign-in" ? "Sign in" : remediation === "choose-installation" ? "Choose Codex" : remediation === "reprobe" ? "Check again" : "Retry"}
+          {remediation === "sign-in" ? "Sign in" : remediation === "reprobe" ? "Check again" : "Retry"}
         </button>
       )}
     </section>
@@ -60,7 +60,7 @@ function readinessContent(kind: AssistantProviderStatus["kind"]) {
     case "probing": return { title: "Checking Codex", description: "Your draft is safe while Qali verifies this installation." };
     case "authentication-required": return { title: "Sign in to Codex", description: "Use your existing Codex account to continue." };
     case "needs-reprobe": return { title: "Codex changed", description: "Check the installation again before starting a new request." };
-    case "incompatible": return { title: "Unsupported Codex version", description: "Choose a supported Codex installation to continue." };
+    case "incompatible": return { title: "Codex needs a Qali update", description: "Codex is installed, but this Qali build hasn’t verified its version. Update Qali, then check again." };
     case "unavailable": return { title: "Assistant unavailable", description: "This build cannot start Codex right now. Try again after it is available." };
     case "probe-failed": return { title: "Couldn’t verify Codex", description: "Check the installation again. Your calendar and draft were not changed." };
     case "offline": return { title: "Assistant offline", description: "Reconnect, then try again. Your draft remains here." };

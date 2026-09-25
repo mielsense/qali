@@ -386,6 +386,7 @@ describe("Codex app-server retained containment", () => {
         PATH: "/usr/bin:/bin",
         HTTPS_PROXY: fixture.proxy.url,
         HTTP_PROXY: fixture.proxy.url,
+        CODEX_CA_CERTIFICATE: "/private/etc/ssl/cert.pem",
       },
     });
     expect(observed?.[2].env.NO_PROXY).toBeUndefined();
@@ -438,6 +439,8 @@ describe("Codex app-server retained containment", () => {
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow process-fork)`)).toThrow();
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow network-inbound)`)).toThrow();
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow file-read* (subpath "/Users"))`)).toThrow();
+    expect(() => auditCodexAppServerSandboxProfile(profile.replace('(literal "/private/etc/ssl/cert.pem")', '(subpath "/private/etc/ssl")'))).toThrow();
+    expect(() => auditCodexAppServerSandboxProfile(profile.replace('(literal "/private/etc/ssl/cert.pem")', ''))).toThrow();
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow file-read*)`)).toThrow();
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow file-read* (subpath (param "CALLER_PATH")))`)).toThrow();
     expect(() => auditCodexAppServerSandboxProfile(`${profile}\n(allow signal)`)).toThrow();

@@ -229,3 +229,64 @@ describe("resolveCodexInstallation", () => {
     });
   });
 });
+
+
+describe("stable Codex installation discovery", () => {
+  const alias = "/opt/homebrew/bin/codex";
+  const discoveryManifest = { ...manifest, discovery: { locations: [alias, executable] } };
+  const missing = () => Object.assign(new Error("missing"), { code: "ENOENT" });
+
+  function aliasFixture(target = executable) {
+    const base = fixture().dependencies!;
+    return fixture({
+      canonicalize: async (path) => path === alias ? target : path,
+      lstat: async (path) => path === alias
+        ? { ...await base.lstat(path), isFile: () => false, isSymbolicLink: () => true }
+        : base.lstat(path),
+    });
+  }
+
+  test("follows the approved Homebrew alias to a verified executable", async () => {
+    const input = aliasFixture();
+    expect(await resolveCodexInstallation({ ...input, manifest: discoveryManifest }))
+      .toMatchObject({ kind: "supported", evidence: { executablePath: executable } });
+  });
+
+  test("finds a verified installation after its versioned directory moves", async () => {
+    const upgraded = "/opt/homebrew/Caskroom/codex/0.148.0/bin/codex";
+    const input = aliasFixture(upgraded);
+    const dependencies = {
+      ...input.dependencies!,
+      probeVersion: async ({ executablePath }: { executablePath: string }) => {
+        expect(executablePath).toBe(upgraded);
+        return { stdout: "codex-cli 0.147.0", stderr: "", exitCode: 0 };
+      },
+      probeGeneratedSchema: async () => schemaSha256,
+    };
+    expect(await resolveCodexInstallation({ ...input, dependencies, manifest: discoveryManifest }))
+      .toMatchObject({ kind: "supported", evidence: { executablePath: upgraded } });
+  });
+
+  test("reports an unverified upgrade as incompatible, not missing", async () => {
+    const input = aliasFixture();
+    expect(await resolveCodexInstallation({ ...input, manifest: discoveryManifest,
+      dependencies: { ...input.dependencies!, hashFile: async () => "0".repeat(64) },
+    })).toEqual({ kind: "incompatible", reason: "hash-mismatch" });
+  });
+
+  test("rechecks an alias changed during the probe", async () => {
+    const input = aliasFixture();
+    let resolutions = 0;
+    expect(await resolveCodexInstallation({ ...input,
+      manifest: { ...manifest, discovery: { locations: [alias] } },
+      dependencies: { ...input.dependencies!, canonicalize: async () =>
+        ++resolutions === 1 ? executable : "/replacement/codex" },
+    })).toEqual({ kind: "needs-reprobe" });
+  });
+
+  test("does not label a missing generated schema as a missing installation", async () => {
+    expect(await resolveCodexInstallation(fixture({
+      probeGeneratedSchema: async () => { throw missing(); },
+    }))).toMatchObject({ kind: "probe-failed" });
+  });
+});

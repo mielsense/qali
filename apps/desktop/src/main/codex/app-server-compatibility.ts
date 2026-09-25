@@ -175,6 +175,7 @@ async function resolveCandidate(
   candidate: string,
   entries: readonly CodexAppServerCompatibilityEntry[],
   dependencies: CodexCompatibilityDependencies,
+  allowInstallationAlias = false,
 ): Promise<CodexInstallationResolution> {
   if (!isAbsolute(candidate)) {
     return { kind: "incompatible", reason: "path-not-absolute" };
@@ -183,22 +184,26 @@ async function resolveCandidate(
   let stage = "candidate-stat";
   try {
     const requestedStat = await dependencies.lstat(candidate);
-    if (requestedStat.isSymbolicLink()) {
+    const isAlias = requestedStat.isSymbolicLink();
+    if (isAlias && !allowInstallationAlias) {
       return { kind: "incompatible", reason: "symlink-not-allowed" };
     }
-    if (!requestedStat.isFile()) {
+    if (!isAlias && !requestedStat.isFile()) {
       return { kind: "incompatible", reason: "not-regular-file" };
     }
-    if ((requestedStat.mode & 0o111) === 0) {
+    if (!isAlias && (requestedStat.mode & 0o111) === 0) {
       return { kind: "incompatible", reason: "not-executable" };
     }
 
     stage = "canonicalize";
     const executablePath = await dependencies.canonicalize(candidate);
-    if (executablePath !== candidate) {
+    if (!isAlias && executablePath !== candidate) {
       return { kind: "incompatible", reason: "non-canonical-path" };
     }
-    const before = requestedStat;
+    const before = isAlias ? await dependencies.lstat(executablePath) : requestedStat;
+    if (!before.isFile() || before.isSymbolicLink() || (before.mode & 0o111) === 0) {
+      return { kind: "incompatible", reason: "not-regular-executable" };
+    }
 
     stage = "architecture";
     const format = await dependencies.inspectArchitecture(executablePath);
@@ -243,7 +248,8 @@ async function resolveCandidate(
       after.isSymbolicLink() ||
       !after.isFile() ||
       (after.mode & 0o111) === 0 ||
-      !sameIdentity(before, after)
+      !sameIdentity(before, after) ||
+      (isAlias && await dependencies.canonicalize(candidate) !== executablePath)
     ) {
       return { kind: "needs-reprobe" };
     }
@@ -260,7 +266,10 @@ async function resolveCandidate(
       }),
     };
   } catch (error) {
-    if (isMissing(error)) return { kind: "missing" };
+    if (isMissing(error)) {
+      if (stage === "candidate-stat" || stage === "canonicalize") return { kind: "missing" };
+      if (stage === "identity-recheck") return { kind: "needs-reprobe" };
+    }
     return probeFailure(stage, error);
   }
 }
@@ -268,7 +277,9 @@ async function resolveCandidate(
 /**
  * Resolves a Codex installation only from shipped locations or one explicit
  * selection. This is deliberately installation-only: it never checks login,
- * reads credentials, contacts the provider, or searches PATH.
+ * reads credentials, contacts the provider, or searches PATH. The manifest-owned
+ * stable Homebrew alias may resolve to a new version, which still must pass all
+ * binary, schema, and identity checks. Explicit selections never fall back.
  */
 export async function resolveCodexInstallation(
   input: ResolveCodexInstallationInput,
@@ -284,6 +295,7 @@ export async function resolveCodexInstallation(
       candidate,
       input.manifest.appServerCompatibility,
       dependencies,
+      input.selectedPath === undefined && candidate === input.manifest.executable.entryPath,
     );
     if (input.selectedPath !== undefined || result.kind === "supported") return result;
     if (

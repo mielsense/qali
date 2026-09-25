@@ -10,6 +10,7 @@
   },
   "discovery": {
     "locations": [
+      "/opt/homebrew/bin/codex",
       "/opt/homebrew/Caskroom/codex/0.149.1/bin/codex"
     ]
   },
@@ -24,15 +25,32 @@
         "bundlePath": "codex_app_server_protocol.v2.schemas.json",
         "sha256": "9b3de71a5a2ffc980b792a18aa8f8dec3f85f48829560222a0264fe494b679a9"
       }
+    },
+    {
+      "compatibilityVersion": 1,
+      "version": "codex-cli 0.156.1",
+      "sha256": "0196e89fe5a7598f816ee54232c3d7c26d75e502ab5cfe2c9240e81d90f7255a",
+      "format": "Mach-O 64-bit executable arm64",
+      "architecture": "arm64",
+      "generatedSchema": {
+        "bundlePath": "codex_app_server_protocol.v2.schemas.json",
+        "sha256": "995fc3b8f8c469f6787e8fc5be4038c4f31359025edd8480b862e83355f3bf3b"
+      }
     }
   ],
   "sandbox": {
     "path": "codex-calendar.sb",
-    "sha256": "0173fdb8699875115ce55ee31451dd0a53b539c1a39c2310d9ba204f4b8f9cab"
+    "sha256": "e08a3f51a60d77eaffb6d844cdcd003f060acb5b267af3fd5d61e0d02d3f3b77"
   },
   "proxy": {
-    "allowedHosts": ["api.openai.com", "auth.openai.com", "chatgpt.com"],
-    "allowedPorts": [443],
+    "allowedHosts": [
+      "api.openai.com",
+      "auth.openai.com",
+      "chatgpt.com"
+    ],
+    "allowedPorts": [
+      443
+    ],
     "policySha256": "14b65684bc97d9f08e14d9f5679ed23386280d76dbd760b755565ef8df9d1071"
   },
   "capability": {

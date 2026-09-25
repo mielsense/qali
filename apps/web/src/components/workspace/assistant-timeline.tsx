@@ -51,7 +51,7 @@ export function AssistantTimeline({
     >
       {rows.map((row) => {
         if (row.kind === "user") {
-          return <p key={row.id} className="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-muted px-3 py-2 text-sm leading-5 whitespace-pre-wrap">{row.text}</p>;
+          return <p key={row.id} className="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-3 py-2 text-sm leading-5 whitespace-pre-wrap">{row.text}</p>;
         }
         if (row.kind === "assistant") {
           return <AssistantMarkdown key={row.id} text={row.text} />;

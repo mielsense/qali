@@ -2,7 +2,7 @@
 // TypeScript config intentionally includes browser globals only.
 import { describe, expect, it } from "bun:test";
 
-import { assistantCanSend } from "./assistant-readiness";
+import { assistantCanSend, assistantRemediation } from "./assistant-readiness";
 
 describe("assistantCanSend", () => {
   it("allows both full and degraded ready states", () => {
@@ -16,4 +16,9 @@ describe("assistantCanSend", () => {
     expect(assistantCanSend({ kind: "probe-failed" })).toBe(false);
     expect(assistantCanSend(undefined)).toBe(false);
   });
+});
+
+it("rescans missing or incompatible installations without a file picker", () => {
+  expect(assistantRemediation({ kind: "unavailable" })).toBe("reprobe");
+  expect(assistantRemediation({ kind: "incompatible" })).toBe("reprobe");
 });

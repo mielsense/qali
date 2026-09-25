@@ -213,6 +213,7 @@ export function auditCodexAppServerSandboxProfile(profile: string): CodexSandbox
   const permittedPaths = new Set([
     "/",
     "/System/Library",
+    "/private/etc/ssl/cert.pem",
     "/usr/lib",
     "/usr/share/locale",
     "/private/var/db/timezone",
@@ -264,6 +265,8 @@ export function auditCodexAppServerSandboxProfile(profile: string): CodexSandbox
     occurrences(policy, "(allow file-read*") === 1 &&
     policy.includes(exactHomeRead) &&
     policy.includes(exactCwdRead) &&
+    policy.includes('(literal "/private/etc/ssl/cert.pem")') &&
+    !policy.includes('(subpath "/private/etc/ssl/cert.pem")') &&
     occurrences(policy, "file-write") === 2 &&
     policy.includes(exactHomeWrite) &&
     policy.includes(exactNullWrite) &&
@@ -477,6 +480,10 @@ export async function createCodexAppServerContainment(
             LANG: "C.UTF-8",
             LC_ALL: "C.UTF-8",
             NO_COLOR: "1",
+            // Use the OS public CA bundle through Codex's supported TLS option.
+            // Native trust discovery cannot access the user's trust stores in
+            // this sandbox; certificate verification must remain enabled.
+            CODEX_CA_CERTIFICATE: "/private/etc/ssl/cert.pem",
             PATH: "/usr/bin:/bin",
             TMPDIR: boundary.codexHome,
             HTTPS_PROXY: boundary.proxy.url,
