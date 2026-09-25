@@ -63,6 +63,10 @@ export function RichTextEditor({
   autoFocus?: boolean;
 }) {
   const editor = useEditor({
+    // The lazy description screen can suspend before it commits. An editor
+    // created during render can be destroyed by TipTap before React mounts it.
+    // Create it in the committed effect so its schema is still live on mount.
+    immediatelyRender: false,
     extensions: extensions(placeholder),
     content: toEditorHtml(value),
     autofocus: autoFocus ? "end" : false,
@@ -91,7 +95,7 @@ export function RichTextEditor({
   // ordinary typing — which already emits block-per-line HTML — isn't clobbered
   // mid-keystroke; only a genuinely different external value resets the content.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     const current = editor.getHTML();
     const incoming = toEditorHtml(value || "");
     const normalizedCurrent = isEmptyDescriptionHtml(current) ? "" : current;

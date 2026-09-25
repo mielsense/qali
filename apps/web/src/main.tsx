@@ -10,6 +10,7 @@ import { DesktopRendererProvider } from "@/lib/desktop/auth-provider";
 import { HostedUserProvider } from "@/lib/desktop/status";
 
 import Loader from "./components/loader";
+import { AppErrorBoundary, AppErrorScreen } from "./components/app-error";
 import { routeTree } from "./routeTree.gen";
 const convex = new ConvexReactClient(env.VITE_CONVEX_URL);
 const desktopApi = desktopApiFor();
@@ -31,6 +32,7 @@ const router = createRouter({
   defaultPreload: "intent",
   scrollRestoration: true,
   defaultPendingComponent: () => <Loader />,
+  defaultErrorComponent: AppErrorScreen,
   context: {},
   Wrap: function WrapComponent({ children }: { children: React.ReactNode }) {
     if (desktopApi) {
@@ -62,5 +64,9 @@ if (!rootElement) {
 // flashes a fallback serif, and there's no blank gap while fonts load.
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-  root.render(<RouterProvider router={router} />);
+  root.render(
+    <AppErrorBoundary>
+      <RouterProvider router={router} />
+    </AppErrorBoundary>,
+  );
 }
